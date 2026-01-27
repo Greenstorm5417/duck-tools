@@ -1,0 +1,10 @@
+{
+  "iconDefinitions": {
+    "duckyscript-file": {
+      "iconPath": "../images/duck-icon.svg"
+    }
+  },
+  "languageIds": {
+    "duckyscript": "duckyscript-file"
+  }
+}

@@ -28,12 +28,6 @@ impl DocumentStore {
     pub fn remove(&self, uri: &Url) {
         self.documents.remove(uri);
     }
-
-    /// Check if document exists
-    #[allow(dead_code)]
-    pub fn contains(&self, uri: &Url) -> bool {
-        self.documents.contains_key(uri)
-    }
 }
 
 impl Default for DocumentStore {

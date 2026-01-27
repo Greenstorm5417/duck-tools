@@ -17,7 +17,7 @@ impl Preprocessor {
     }
 
     pub fn gather_defines(&mut self, lines: &[String]) -> CompilerResult<()> {
-        for line in lines {
+        for (line_idx, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
             if DEFINE_REGEX.is_match(trimmed) {
                 let words: Vec<&str> = trimmed.split_whitespace().collect();
@@ -32,7 +32,7 @@ impl Preprocessor {
                     .to_string();
                 
                 if self.labels.contains(&label) {
-                    return Err(CompilerError::DuplicateDefinition(label));
+                    return Err(CompilerError::DuplicateDefinition { line: line_idx + 1, name: label });
                 }
                 
                 self.labels.push(label);
@@ -114,8 +114,16 @@ impl Preprocessor {
         let mut result = Vec::new();
         let mut inside_string_block = false;
         let mut inside_stringln_block = false;
+        let mut suppress_next_warning = false;
 
         for (line_num, line) in lines.iter().enumerate() {
+            // Check if this line has a suppression comment
+            let trimmed = line.trim();
+            if trimmed.starts_with("REM ducky-ignore-next-line") {
+                suppress_next_warning = true;
+                result.push(line.clone());
+                continue;
+            }
             if line.trim().is_empty() {
                 result.push(line.clone());
                 continue;
@@ -148,15 +156,20 @@ impl Preprocessor {
                 for (i, label) in self.labels.iter().enumerate() {
                     if label.starts_with('#') {
                         if modified_line.contains(label) {
-                            self.warnings.push(CompilerWarning {
-                                line: line_num,
-                                message: format!("DEFINE {} modifies this line replacing {} with {}", label, label, self.replacements[i]),
-                            });
+                            if !suppress_next_warning {
+                                self.warnings.push(CompilerWarning::DefineReplacement {
+                                    line: line_num + 1,
+                                    label: label.clone(),
+                                    old: label.clone(),
+                                    new: self.replacements[i].clone(),
+                                });
+                            }
                             modified_line = modified_line.replace(label, &self.replacements[i]);
                         }
                     }
                 }
 
+                suppress_next_warning = false;
                 result.push(modified_line);
                 continue;
             }
@@ -169,10 +182,14 @@ impl Preprocessor {
                     for word in words {
                         if word == label {
                             new_words.push(self.replacements[i].clone());
-                            self.warnings.push(CompilerWarning {
-                                line: line_num,
-                                message: format!("DEFINE {} modifies this line replacing {} with {}", label, label, self.replacements[i]),
-                            });
+                            if !suppress_next_warning {
+                                self.warnings.push(CompilerWarning::DefineReplacement {
+                                    line: line_num + 1,
+                                    label: label.clone(),
+                                    old: label.clone(),
+                                    new: self.replacements[i].clone(),
+                                });
+                            }
                             replacement_made = true;
                         } else {
                             new_words.push(word.to_string());
@@ -190,15 +207,20 @@ impl Preprocessor {
             for (i, label) in self.labels.iter().enumerate() {
                 if label.starts_with('#') {
                     if modified_line.contains(label) {
-                        self.warnings.push(CompilerWarning {
-                            line: line_num,
-                            message: format!("DEFINE {} modifies this line replacing {} with {}", label, label, self.replacements[i]),
-                        });
+                        if !suppress_next_warning {
+                            self.warnings.push(CompilerWarning::DefineReplacement {
+                                line: line_num + 1,
+                                label: label.clone(),
+                                old: label.clone(),
+                                new: self.replacements[i].clone(),
+                            });
+                        }
                         modified_line = modified_line.replace(label, &self.replacements[i]);
                     }
                 }
             }
 
+            suppress_next_warning = false;
             result.push(modified_line.clone());
         }
 

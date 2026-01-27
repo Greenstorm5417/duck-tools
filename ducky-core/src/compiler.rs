@@ -75,11 +75,22 @@ impl DuckyCompiler {
         self.warnings.extend(preprocessor.warnings);
 
         for (index, line) in lines.iter().enumerate() {
-            self.current_line = line.clone();
+            self.current_line = line.trim().to_string();
             self.current_line_index = index;
 
             if let Err(e) = self.process_line(line) {
-                self.errors.push(e);
+                // Wrap error with line number context if not already present (1-indexed for display)
+                let error_with_line = match e {
+                    CompilerError::SyntaxError { .. } => e, // Already has line number
+                    other => CompilerError::SyntaxError {
+                        line: index + 1,
+                        message: format!("{}", other),
+                        column: None,
+                        length: None,
+                        suggestion: None,
+                    },
+                };
+                self.errors.push(error_with_line);
                 if self.errors.len() > 50 {
                     break;
                 }
@@ -97,6 +108,11 @@ impl DuckyCompiler {
                     size: self.output_buffer.len(),
                 });
             }
+        }
+
+        // Check if any errors occurred during compilation
+        if !self.errors.is_empty() {
+            return Err(self.errors[0].clone());
         }
 
         self.post_process()?;
@@ -181,7 +197,16 @@ impl DuckyCompiler {
                 self.inside_rem_block = false;
                 Ok(())
             }
-            TokenType::Rem | TokenType::Comment => Ok(()),
+            TokenType::Rem => Ok(()),
+            TokenType::Comment => {
+                // Warn about // comments - DuckyScript only supports REM
+                self.warnings.push(CompilerWarning::DeprecatedSyntax {
+                    line: self.current_line_index + 1,
+                    old: "// comments".to_string(),
+                    new: "REM comments".to_string(),
+                });
+                Ok(())
+            }
             TokenType::Define | TokenType::IfDefined | TokenType::IfNotDefined
             | TokenType::ElseDefined | TokenType::EndIfDefined => Ok(()),
             
@@ -417,10 +442,10 @@ impl DuckyCompiler {
             if let Some(&val) = RESERVED_VARIABLES.get(var_name) {
                 append_hex_string_array(&mut self.output_buffer, vec![hex_encode(val)])?;
             } else {
-                return Err(CompilerError::UnknownVariable(var_name.to_string()));
+                return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var_name.to_string() });
             }
         } else {
-            return Err(CompilerError::UnknownVariable(var_name.to_string()));
+            return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var_name.to_string() });
         }
         Ok(())
     }
@@ -515,8 +540,11 @@ impl DuckyCompiler {
                 // Single byte
                 append_hex_string_array(&mut self.output_buffer, vec![codes[0].clone(), "00".to_string()])?;
             }
+            Ok(())
+        } else {
+            // Key not found in keyboard layout
+            Err(CompilerError::KeyNotFound { line: self.current_line_index + 1, key: ch.to_string() })
         }
-        Ok(())
     }
 
     fn handle_if(&mut self, line: &str, chain: bool) -> CompilerResult<()> {
@@ -552,7 +580,7 @@ impl DuckyCompiler {
                 let mut temp = Vec::new();
                 self.state.next_register();
                 
-                if stack.len() > 1 {
+                if stack.len() >= 3 {
                     let var2 = stack.pop().unwrap();
                     let op = stack.pop().unwrap();
                     let var1 = stack.pop().unwrap();
@@ -564,7 +592,7 @@ impl DuckyCompiler {
                     temp.push(var2);
                     temp.push(op);
                 } else if stack.is_empty() {
-                    return Err(CompilerError::EmptyExpression);
+                    return Err(CompilerError::EmptyExpression { line: self.current_line_index + 1 });
                 } else {
                     let var1 = stack.pop().unwrap();
                     let current_reg = self.state.current_register();
@@ -584,6 +612,7 @@ impl DuckyCompiler {
 
         if lp_count != rp_count {
             return Err(CompilerError::MismatchedParentheses {
+                line: self.current_line_index + 1,
                 left: lp_count,
                 right: rp_count,
             });
@@ -744,6 +773,7 @@ impl DuckyCompiler {
 
     fn handle_assignment(&mut self, line: &str) -> CompilerResult<()> {
         self.mark_ds3();
+        
         let lexemes = split_syntax_line(line);
         let mut stack: Vec<String> = Vec::new();
         let mut output_stack: Vec<Vec<String>> = Vec::new();
@@ -792,12 +822,29 @@ impl DuckyCompiler {
                 self.state.free_eval_registers = self.state.free_eval_registers.saturating_sub(1);
                 output_stack.push(temp);
             } else {
-                stack.push(word);
+                // Check if it's a valid token before pushing (matches JS logic)
+                if ParserState::is_var(&word) || ParserState::is_operator(&word) || 
+                   ParserState::is_reserved_var(&word) || ParserState::is_reserved_constant(&word) ||
+                   ParserState::is_numeric(&word) {
+                    stack.push(word);
+                } else {
+                    // Unrecognized symbol - report error like JS line 3894
+                    // Push error but continue to collect all errors on this line
+                    self.errors.push(CompilerError::SyntaxError {
+                        line: self.current_line_index + 1,
+                        message: format!("Unexpected Symbol: {}", word),
+                        column: None,
+                        length: Some(word.len()),
+                        suggestion: Some("Remove this unrecognized symbol or check spelling".to_string()),
+                    });
+                    // Don't return - continue processing to find all errors
+                }
             }
         }
 
         if lp_count != rp_count {
             return Err(CompilerError::MismatchedParentheses {
+                line: self.current_line_index + 1,
                 left: lp_count,
                 right: rp_count,
             });
@@ -823,8 +870,11 @@ impl DuckyCompiler {
         self.mark_ds3();
         if self.defining_function {
             return Err(CompilerError::SyntaxError {
-                line: self.current_line_index,
+                line: self.current_line_index + 1,
                 message: "Nested functions not allowed".to_string(),
+                column: None,
+                length: None,
+                suggestion: Some("Close the current function with END_FUNCTION before defining a new one".to_string()),
             });
         }
         self.defining_function = true;
@@ -981,10 +1031,10 @@ impl DuckyCompiler {
                 if let Some(&val) = RESERVED_VARIABLES.get(var_name) {
                     append_hex_string_array(&mut self.output_buffer, vec![hex_encode(val)])?;
                 } else {
-                    return Err(CompilerError::UnknownVariable(var_name.to_string()));
+                    return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var_name.to_string() });
                 }
             } else {
-                return Err(CompilerError::UnknownVariable(var_name.to_string()));
+                return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var_name.to_string() });
             }
         }
         Ok(())
@@ -1010,7 +1060,7 @@ impl DuckyCompiler {
             if let Some(addr) = self.state.get_var_address(var_name) {
                 append_hex_string_array(&mut self.output_buffer, vec![dec_to_hex(addr)])?;
             } else {
-                return Err(CompilerError::UnknownVariable(var_name.to_string()));
+                return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var_name.to_string() });
             }
         }
         Ok(())
@@ -1160,14 +1210,17 @@ impl DuckyCompiler {
                 if let Some(addr) = self.state.get_var_address(var) {
                     encoded_line.push(dec_to_hex(addr));
                 } else {
-                    return Err(CompilerError::UnknownVariable(var.to_string()));
+                    return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var.to_string() });
                 }
             } else if word.to_ascii_uppercase().starts_with("VID_") {
                 let arg = &word[4..];
                 if arg.is_empty() {
                     return Err(CompilerError::SyntaxError {
-                        line: self.current_line_index,
+                        line: self.current_line_index + 1,
                         message: "Invalid VID".to_string(),
+                        column: None,
+                        length: None,
+                        suggestion: Some("VID must be a valid hex value (e.g., VID_0x1234)".to_string()),
                     });
                 }
                 let formatted = format_hex(arg);
@@ -1192,14 +1245,17 @@ impl DuckyCompiler {
                 if let Some(addr) = self.state.get_var_address(var) {
                     encoded_line.push(dec_to_hex(addr));
                 } else {
-                    return Err(CompilerError::UnknownVariable(var.to_string()));
+                    return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var.to_string() });
                 }
             } else if word.to_ascii_uppercase().starts_with("PID_") {
                 let arg = &word[4..];
                 if arg.is_empty() {
                     return Err(CompilerError::SyntaxError {
-                        line: self.current_line_index,
+                        line: self.current_line_index + 1,
                         message: "Invalid PID".to_string(),
+                        column: None,
+                        length: None,
+                        suggestion: Some("PID must be a valid hex value (e.g., PID_0x5678)".to_string()),
                     });
                 }
                 let formatted = format_hex(arg);
@@ -1224,8 +1280,11 @@ impl DuckyCompiler {
                 let arg = &word[4..];
                 if arg.is_empty() || arg.len() > 32 {
                     return Err(CompilerError::SyntaxError {
-                        line: self.current_line_index,
+                        line: self.current_line_index + 1,
                         message: "Invalid Manufacturer".to_string(),
+                        column: None,
+                        length: None,
+                        suggestion: Some("Manufacturer string must be 1-32 characters (e.g., MAN_Acme)".to_string()),
                     });
                 }
                 encoded_line.push(hex_encode(0xF9F9));
@@ -1254,8 +1313,11 @@ impl DuckyCompiler {
                 let arg = &word[5..];
                 if arg.is_empty() || arg.len() > 32 {
                     return Err(CompilerError::SyntaxError {
-                        line: self.current_line_index,
+                        line: self.current_line_index + 1,
                         message: "Invalid Product".to_string(),
+                        column: None,
+                        length: None,
+                        suggestion: Some("Product string must be 1-32 characters (e.g., PROD_Widget)".to_string()),
                     });
                 }
                 encoded_line.push(hex_encode(0xFAFA));
@@ -1284,14 +1346,20 @@ impl DuckyCompiler {
                 let arg = &word[7..];
                 if arg.is_empty() || arg.len() > 12 {
                     return Err(CompilerError::SyntaxError {
-                        line: self.current_line_index,
+                        line: self.current_line_index + 1,
                         message: "Invalid Serial".to_string(),
+                        column: None,
+                        length: None,
+                        suggestion: Some("Serial must be 1-12 digits (e.g., SERIAL_123456789012)".to_string()),
                     });
                 }
                 if !arg.chars().all(|c| c.is_ascii_digit()) {
                     return Err(CompilerError::SyntaxError {
-                        line: self.current_line_index,
-                        message: "Invalid Serial".to_string(),
+                        line: self.current_line_index + 1,
+                        message: "Serial must contain only digits".to_string(),
+                        column: None,
+                        length: None,
+                        suggestion: Some("Use only digits 0-9 in SERIAL_ value".to_string()),
                     });
                 }
                 encoded_line.push(hex_encode(0xFBFB));
@@ -1321,16 +1389,22 @@ impl DuckyCompiler {
         if vid_defined || pid_defined {
             if !(vid_defined && pid_defined) {
                 return Err(CompilerError::SyntaxError {
-                    line: self.current_line_index,
+                    line: self.current_line_index + 1,
                     message: "VID + PID must both be defined".to_string(),
+                    column: None,
+                    length: None,
+                    suggestion: Some("Define both VID and PID together in ATTACKMODE".to_string()),
                 });
             }
         }
         if man_defined || prod_defined || serial_defined {
             if !(man_defined && prod_defined && serial_defined) {
                 return Err(CompilerError::SyntaxError {
-                    line: self.current_line_index,
+                    line: self.current_line_index + 1,
                     message: "MAN + PROD + SERIAL must all be defined".to_string(),
+                    column: None,
+                    length: None,
+                    suggestion: Some("Define all three: MAN_, PROD_, and SERIAL_ together".to_string()),
                 });
             }
         }
@@ -1411,12 +1485,55 @@ impl DuckyCompiler {
         if parts.len() > 1 {
             let mut key_sum = 0u8;
             let mut mod_sum = 0u8;
+            let mut any_found = false;
             
             for part in &parts {
                 if let Some(codes) = self.keyboard_layout.get_bytes_for_key(part) {
+                    any_found = true;
                     if codes.len() >= 3 {
                         let modifier = u8::from_str_radix(&codes[0], 16).unwrap_or(0);
                         let keycode = u8::from_str_radix(&codes[2], 16).unwrap_or(0);
+                        
+                        // STRICT COMBOS - check if key already has implicit modifier
+                        if keycode != 0 && modifier != 0 {
+                            // This key already contains a modifier (e.g., uppercase letter has SHIFT)
+                            // Check if we're trying to add another modifier
+                            for other_part in &parts {
+                                if other_part != part {
+                                    if let Some(other_codes) = self.keyboard_layout.get_bytes_for_key(other_part) {
+                                        if other_codes.len() >= 3 {
+                                            let other_mod = u8::from_str_radix(&other_codes[0], 16).unwrap_or(0);
+                                            let other_key = u8::from_str_radix(&other_codes[2], 16).unwrap_or(0);
+                                            // If other part is a pure modifier (no keycode) being combined with a key that has modifier
+                                            if other_key == 0 && other_mod != 0 {
+                                                // Find modifier name
+                                                let mod_name = self.keyboard_layout.keys.iter()
+                                                    .find(|(_, v)| v.as_str() == format!("{:02x},00,00", modifier))
+                                                    .map(|(k, _)| k.as_str())
+                                                    .unwrap_or("SHIFT");
+                                                
+                                                // Push both error messages like official compiler
+                                                self.errors.push(CompilerError::SyntaxError {
+                                                    line: self.current_line_index + 1,
+                                                    message: "STRICT COMBOS - PREVENTING IMPLICIT MODIFIER COMBINATION".to_string(),
+                                                    column: None,
+                                                    length: None,
+                                                    suggestion: Some(format!("Use lowercase '{}' instead of uppercase", part.to_lowercase())),
+                                                });
+                                                
+                                                return Err(CompilerError::SyntaxError {
+                                                    line: self.current_line_index + 1,
+                                                    message: format!("IMPLICIT MODIFIER COMBINATION: {} already contains {}", part, mod_name),
+                                                    column: None,
+                                                    length: Some(part.len()),
+                                                    suggestion: Some(format!("Use lowercase '{}' instead", part.to_lowercase())),
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         
                         if keycode != 0 {
                             key_sum += keycode;
@@ -1430,7 +1547,13 @@ impl DuckyCompiler {
                         let byte_val = u8::from_str_radix(&codes[0], 16).unwrap_or(0);
                         key_sum += byte_val;
                     }
+                } else {
+                    return Err(CompilerError::KeyNotFound { line: self.current_line_index + 1, key: part.to_string() });
                 }
+            }
+            
+            if !any_found {
+                return Err(CompilerError::KeyNotFound { line: self.current_line_index + 1, key: trimmed.to_string() });
             }
             
             append_hex_string_array(&mut self.output_buffer, vec![format!("{:02x}", key_sum), format!("{:02x}", mod_sum)])?;
@@ -1451,19 +1574,19 @@ impl DuckyCompiler {
 
     fn post_process(&mut self) -> CompilerResult<()> {
         if !self.state.block_stack.is_empty() {
-            return Err(CompilerError::MissingEnd("IF/WHILE".to_string()));
+            return Err(CompilerError::MissingEnd { line: self.current_line_index + 1, block_type: "IF/WHILE".to_string() });
         }
         
         if self.inside_string_block {
-            return Err(CompilerError::MissingEnd("STRING".to_string()));
+            return Err(CompilerError::MissingEnd { line: self.current_line_index + 1, block_type: "STRING".to_string() });
         }
         
         if self.inside_stringln_block {
-            return Err(CompilerError::MissingEnd("STRINGLN".to_string()));
+            return Err(CompilerError::MissingEnd { line: self.current_line_index + 1, block_type: "STRINGLN".to_string() });
         }
         
         if self.defining_button > 0 {
-            return Err(CompilerError::MissingEnd("BUTTON".to_string()));
+            return Err(CompilerError::MissingEnd { line: self.current_line_index + 1, block_type: "BUTTON".to_string() });
         }
         
         Ok(())

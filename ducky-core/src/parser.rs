@@ -52,10 +52,10 @@ impl ParserState {
                 self.var_values[addr] = value;
                 Ok(addr)
             } else {
-                Err(CompilerError::UnknownVariable(name.to_string()))
+                Err(CompilerError::UnknownVariable { line: 0, name: name.to_string() })
             }
         } else {
-            Err(CompilerError::UnknownVariable(name.to_string()))
+            Err(CompilerError::UnknownVariable { line: 0, name: name.to_string() })
         }
     }
 
@@ -101,7 +101,7 @@ impl ParserState {
 
     pub fn create_label(&mut self, label: &str, address: usize) -> CompilerResult<()> {
         if self.label_exists(label) {
-            return Err(CompilerError::DuplicateDefinition(label.to_string()));
+            return Err(CompilerError::DuplicateDefinition { line: 0, name: label.to_string() });
         }
         self.label_map.insert(label.to_string(), address);
         Ok(())

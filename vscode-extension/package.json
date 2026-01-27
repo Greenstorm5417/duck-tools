@@ -1,0 +1,212 @@
+{
+  "name": "duckyscript-lsp",
+  "displayName": "DuckyScript Language Support",
+  "description": "DuckyScript 3.0 language support with LSP",
+  "version": "0.1.0",
+  "publisher": "ducky",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": ["Programming Languages"],
+  "activationEvents": ["onLanguage:duckyscript"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "duckyscript",
+      "aliases": ["DuckyScript", "duckyscript"],
+      "extensions": [".txt"],
+      "configuration": "./language-configuration.json",
+      "icon": {
+        "light": "./images/duck-icon.svg",
+        "dark": "./images/duck-icon.svg"
+      }
+    }],
+    "configuration": {
+      "type": "object",
+      "title": "DuckyScript",
+      "properties": {
+        "duckyscript.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the language server.",
+          "scope": "window"
+        },
+        "duckyscript.lsp.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable the DuckyScript Language Server.",
+          "scope": "window"
+        },
+        "duckyscript.extension.autoFold": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically fold EXTENSION blocks after insertion.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.hover.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable hover information for commands and variables.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.completion.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable auto-completion for keywords, commands, and variables.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.diagnostics.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time error and warning diagnostics.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.formatting.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable document formatting (Format Document command).",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.semanticTokens.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable semantic syntax highlighting.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.definition.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Go to Definition (F12) for functions and variables.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.references.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Find All References (Shift+F12).",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.rename.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable symbol renaming (F2).",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.documentSymbol.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable document outline and breadcrumbs.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.documentHighlight.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable highlighting of symbol occurrences.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.codeLens.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable code lenses (inline reference counts).",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.signatureHelp.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable signature help for commands.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.foldingRange.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable code folding for blocks.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.codeAction.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable quick fixes and refactoring actions.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.inlayHint.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inlay hints for implicit information.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.selectionRange.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable smart selection expansion.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.onTypeFormatting.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic formatting while typing.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.rangeFormatting.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable formatting of selected text.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.linkedEditing.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable linked editing for matching symbols.",
+          "scope": "resource"
+        },
+        "duckyscript.lsp.callHierarchy.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable call hierarchy for functions.",
+          "scope": "resource"
+        },
+        "duckyscript.compiler.autoSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save file before compiling.",
+          "scope": "resource"
+        },
+        "duckyscript.compiler.showTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show terminal when compiling.",
+          "scope": "resource"
+        }
+      }
+    },
+    "commands": [{
+      "command": "duckyscript.compile",
+      "title": "DuckyScript: Compile Current File",
+      "icon": "$(play)"
+    }],
+    "keybindings": [{
+      "command": "duckyscript.compile",
+      "key": "ctrl+shift+b",
+      "when": "editorLangId == duckyscript"
+    }],
+    "menus": {
+      "editor/title": [{
+        "when": "editorLangId == duckyscript",
+        "command": "duckyscript.compile",
+        "group": "navigation"
+      }]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "@types/vscode": "^1.108.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

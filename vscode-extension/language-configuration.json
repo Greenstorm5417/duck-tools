@@ -1,0 +1,28 @@
+{
+    "comments": {
+        "lineComment": ["REM"]
+    },
+    "brackets": [
+        ["(", ")"],
+        ["{", "}"],
+        ["[", "]"]
+    ],
+    "autoClosingPairs": [
+        { "open": "{", "close": "}" },
+        { "open": "[", "close": "]" },
+        { "open": "(", "close": ")" },
+        { "open": "\"", "close": "\"", "notIn": ["string"] },
+        { "open": "'", "close": "'", "notIn": ["string", "comment"] }
+    ],
+    "surroundingPairs": [
+        ["(", ")"],
+        ["\"", "\""],
+        ["'", "'"]
+    ],
+    "folding": {
+        "markers": {
+            "start": "^\\s*(IF|WHILE|FUNCTION|STRING_BLOCK)\\b",
+            "end": "^\\s*(END_IF|END_WHILE|END_FUNCTION|END_STRING)\\b"
+        }
+    }
+}
