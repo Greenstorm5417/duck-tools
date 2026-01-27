@@ -325,37 +325,17 @@ fn version_command() {
 }
 
 fn update_command() {
-    println!("Checking for updates...");
-    println!("Current version: {}", VERSION);
+    println!("duck update");
     println!();
-    
-    // Call cargo-dist-updater to perform the update
-    let status = Command::new("cargo-dist-updater")
-        .arg("update")
-        .status();
-    
-    match status {
-        Ok(exit_status) if exit_status.success() => {
-            println!();
-            println!("✓ Update completed successfully!");
-            println!("  Please restart your terminal to use the new version.");
-        }
-        Ok(exit_status) => {
-            eprintln!();
-            eprintln!("✗ Update failed with exit code: {}", exit_status);
-            eprintln!("  Try re-running the installer manually:");
-            eprintln!("  curl -L https://github.com/Greenstorm5417/duck-tools/releases/latest/download/install.sh | sh");
-            std::process::exit(1);
-        }
-        Err(e) => {
-            eprintln!();
-            eprintln!("✗ Failed to run updater: {}", e);
-            eprintln!("  Make sure cargo-dist-updater is installed in the same directory as duck.");
-            eprintln!("  Or re-run the installer manually:");
-            eprintln!("  curl -L https://github.com/Greenstorm5417/duck-tools/releases/latest/download/install.sh | sh");
-            std::process::exit(1);
-        }
-    }
+    println!("To update to the latest version, re-run the installer:");
+    println!();
+    println!("Windows (PowerShell):");
+    println!("  irm https://github.com/Greenstorm5417/duck-tools/releases/latest/download/install.ps1 | iex");
+    println!();
+    println!("macOS/Linux:");
+    println!("  curl -L https://github.com/Greenstorm5417/duck-tools/releases/latest/download/install.sh | sh");
+    println!();
+    println!("Current version: {}", VERSION);
 }
 
 fn find_config_file(config_path: Option<PathBuf>) -> Option<PathBuf> {
