@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[derive(Parser, Debug)]
 #[command(name = "duck")]
 #[command(about = "DuckyScript toolchain - Build, format, and lint DuckyScript payloads", long_about = None)]
@@ -20,8 +22,8 @@ struct Args {
 enum Commands {
     #[command(about = "Compile DuckyScript to inject.bin")]
     Build {
-        #[arg(short, long, help = "Input DuckyScript file", required = true)]
-        input: PathBuf,
+        #[arg(short, long, help = "Input DuckyScript file (default: from duck.toml workspace.main_file)")]
+        input: Option<PathBuf>,
         
         #[arg(short, long, help = "Output file (default: inject.bin)")]
         output: Option<PathBuf>,
@@ -74,6 +76,10 @@ enum Commands {
         #[arg(short, long, help = "Output path for config file (default: ducky.toml)")]
         output: Option<PathBuf>,
     },
+    #[command(about = "Show version information")]
+    Version,
+    #[command(about = "Update duck toolchain to the latest version")]
+    Update,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -82,6 +88,8 @@ struct WorkspaceConfig {
     pub name: Option<String>,
     #[serde(default)]
     pub version: Option<String>,
+    #[serde(default)]
+    pub main_file: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -99,7 +107,7 @@ fn main() {
 
     match args.command {
         Commands::Build { input, output, layout, config, verbose, stats, hex } => {
-            build_command(input, output, layout, config, verbose, stats, hex);
+            build_command(input, output, layout, config.clone(), verbose, stats, hex);
         }
         Commands::Fmt { input, config, dry_run, verbose } => {
             fmt_command(input, config, dry_run, verbose);
@@ -110,18 +118,37 @@ fn main() {
         Commands::Init { output } => {
             init_command(output);
         }
+        Commands::Version => {
+            version_command();
+        }
+        Commands::Update => {
+            update_command();
+        }
     }
 }
 
 fn build_command(
-    input: PathBuf,
+    input: Option<PathBuf>,
     output: Option<PathBuf>,
     layout: Option<PathBuf>,
-    _config: Option<PathBuf>,
+    config_path: Option<PathBuf>,
     verbose: bool,
     stats: bool,
     hex: bool,
 ) {
+    // Determine input file: from -i flag or from duck.toml workspace.main_file
+    let input = if let Some(input_path) = input {
+        input_path
+    } else {
+        let config = load_config(config_path);
+        if let Some(main_file) = config.workspace.main_file {
+            PathBuf::from(main_file)
+        } else {
+            eprintln!("Error: No input file specified.");
+            eprintln!("  Use -i <file> or set workspace.main_file in duck.toml");
+            std::process::exit(1);
+        }
+    };
 
     if verbose {
         println!("DuckyScript Compiler v0.1.0");
@@ -246,7 +273,11 @@ fn init_command(output: Option<PathBuf>) {
     let config_path = output.unwrap_or_else(|| PathBuf::from("duck.toml"));
     
     let config = DuckyConfig {
-        workspace: WorkspaceConfig::default(),
+        workspace: WorkspaceConfig {
+            name: None,
+            version: None,
+            main_file: Some("helloworld.txt".to_string()),
+        },
         formatter: None,
         linter: None,
     };
@@ -260,8 +291,47 @@ fn init_command(output: Option<PathBuf>) {
         std::process::exit(1);
     }
     
+    // Create helloworld.txt example
+    let hello_world = r#"REM DuckyScript Hello World Example
+REM This is a simple example to get you started
+
+DELAY 1000
+STRING Hello, World!
+ENTER
+"#;
+    
+    let hello_path = PathBuf::from("helloworld.txt");
+    if let Err(e) = fs::write(&hello_path, hello_world) {
+        eprintln!("Warning: Failed to create helloworld.txt: {}", e);
+    } else {
+        println!("✓ Created example file: {}", hello_path.display());
+    }
+    
     println!("✓ Created configuration file: {}", config_path.display());
     println!("  Run 'duck fmt' or 'duck lint' to add tool-specific configuration.");
+    println!("  Run 'duck build -i helloworld.txt' to compile the example.");
+}
+
+fn version_command() {
+    println!("duck {}", VERSION);
+    println!("DuckyScript toolchain");
+    println!();
+    println!("Components:");
+    println!("  compiler:  {}", VERSION);
+    println!("  formatter: {}", VERSION);
+    println!("  linter:    {}", VERSION);
+    println!("  lsp:       {}", VERSION);
+}
+
+fn update_command() {
+    println!("duck update - Self-update functionality");
+    println!();
+    println!("This feature is not yet implemented.");
+    println!("To update duck manually:");
+    println!("  1. Download the latest release from the repository");
+    println!("  2. Replace the current duck executable");
+    println!();
+    println!("Current version: {}", VERSION);
 }
 
 fn find_config_file(config_path: Option<PathBuf>) -> Option<PathBuf> {

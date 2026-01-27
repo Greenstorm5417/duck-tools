@@ -24,6 +24,8 @@ mod call_hierarchy;
 use backend::Backend;
 use tower_lsp::{LspService, Server};
 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[tokio::main]
 async fn main() {
     // Read from stdin, write to stdout (LSP protocol)

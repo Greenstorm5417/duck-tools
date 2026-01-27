@@ -115,7 +115,7 @@ impl LanguageServer for Backend {
             },
             server_info: Some(ServerInfo {
                 name: "DuckyScript Language Server".to_string(),
-                version: Some("0.1.0".to_string()),
+                version: Some(crate::VERSION.to_string()),
             }),
         })
     }
