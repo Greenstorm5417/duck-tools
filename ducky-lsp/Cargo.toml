@@ -1,7 +1,17 @@
 [package]
 name = "ducky-lsp"
 version = "0.1.0"
-edition = "2024"
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "DuckyScript 3.0 Language Server Protocol implementation"
+
+[package.metadata.wix]
+upgrade-guid = "99F61F94-F77B-47AB-8F5F-7BC787B84B72"
+path-guid = "9BA936CC-1F3B-4310-B803-6147DC687F24"
+license = false
+eula = false
+
 
 [[bin]]
 name = "ducky-lsp"

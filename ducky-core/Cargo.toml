@@ -1,7 +1,10 @@
 [package]
 name = "ducky-core"
 version.workspace = true
-edition = "2024"
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+
 
 [lib]
 name = "ducky_core"

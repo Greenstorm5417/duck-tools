@@ -1,7 +1,9 @@
 [package]
 name = "ducky-lint"
 version.workspace = true
-edition = "2024"
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
 
 [dependencies]
 ducky-core = { path = "../ducky-core" }

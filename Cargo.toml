@@ -6,6 +6,13 @@ resolver = "2"
 version = "0.1.0"
 edition = "2024"
 authors = ["Greenstorm5417"]
+repository = "https://github.com/Greenstorm5417/duck-tools"
+homepage = "https://github.com/Greenstorm5417/duck-tools"
+description = "DuckyScript 3.0 toolchain - compiler, formatter, linter, and LSP"
+license = "MIT"
+keywords = ["duckyscript", "compiler", "usb-rubber-ducky", "hak5"]
+categories = ["command-line-utilities", "development-tools"]
+publish = false
 
 [workspace.dependencies]
 regex = "1.10"
@@ -21,3 +28,21 @@ thiserror = "2.0"
 tower-lsp = "0.20"
 tokio = { version = "1.36", features = ["full"] }
 dashmap = "6.1"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+debug = false
+strip = "symbols"
+debug-assertions = false
+overflow-checks = false
+incremental = false
+rpath = false
+split-debuginfo = "off" 
+
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

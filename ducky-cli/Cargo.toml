@@ -1,7 +1,17 @@
 [package]
 name = "ducky-cli"
 version.workspace = true
-edition = "2024"
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+description.workspace = true
+
+[package.metadata.wix]
+upgrade-guid = "365CB04C-F4CB-4646-8453-9B2452C5E0F1"
+path-guid = "01AFF999-1395-4890-BE77-EE3C301AC906"
+license = false
+eula = false
+
 
 [[bin]]
 name = "duck"
