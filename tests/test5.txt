@@ -1,0 +1,5 @@
+REM Minimal test case
+ATTACKMODE HID
+STRING Hello World
+ENTER
+DELAY 1000

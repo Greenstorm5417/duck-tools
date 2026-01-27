@@ -1,0 +1,261 @@
+REM =====================================================
+REM Full DuckyScript Keyword Coverage — Compiler Test
+REM Safe, non-malicious
+REM =====================================================
+
+ATTACKMODE HID
+DELAY 200
+LED_G
+
+REM -----------------------------------------------------
+REM CONSTANTS
+REM -----------------------------------------------------
+DEFINE #WAIT 500
+DEFINE #HELLO Hello World
+DEFINE #SITE example.com
+
+DELAY #WAIT
+STRINGLN #HELLO
+STRING https://#SITE
+ENTER
+
+REM -----------------------------------------------------
+REM VARIABLES + MATH
+REM -----------------------------------------------------
+VAR $FOO = 1337
+VAR $BAR = 42
+$FOO = ( $FOO - 1295 )
+$BAR = (( 10 * 4 ) + 2 )
+
+IF ( $FOO == $BAR ) THEN
+    STRINGLN Math works!
+END_IF
+
+REM -----------------------------------------------------
+REM STRING BLOCKS
+REM -----------------------------------------------------
+STRING
+    A
+    B
+    C
+END_STRING
+
+STRINGLN
+    Line one
+    Line two
+    Line three
+END_STRINGLN
+
+REM -----------------------------------------------------
+REM CURSOR + SYSTEM KEYS
+REM -----------------------------------------------------
+UP
+DOWN
+LEFT
+RIGHT
+HOME
+END
+PAGEUP
+PAGEDOWN
+INSERT
+DELETE
+BACKSPACE
+TAB
+SPACE
+ENTER
+ESCAPE
+PAUSE
+BREAK
+PRINTSCREEN
+MENU
+APP
+F1
+F2
+F3
+F4
+F5
+F6
+F7
+F8
+F9
+F10
+F11
+F12
+
+REM -----------------------------------------------------
+REM MODIFIERS & COMBOS
+REM -----------------------------------------------------
+CTRL c
+CTRL v
+ALT TAB
+CTRL ALT DELETE
+SHIFT a
+
+INJECT_MOD WINDOWS
+DELAY 200
+
+REM -----------------------------------------------------
+REM LOCK KEYS
+REM -----------------------------------------------------
+CAPSLOCK
+NUMLOCK
+SCROLLLOCK
+
+REM -----------------------------------------------------
+REM CONDITIONALS
+REM -----------------------------------------------------
+IF ( $_CAPSLOCK_ON == TRUE ) THEN
+    STRINGLN Caps is ON
+ELSE IF ( $_CAPSLOCK_ON == FALSE ) THEN
+    STRINGLN Caps is OFF
+END_IF
+
+REM -----------------------------------------------------
+REM LOOPS
+REM -----------------------------------------------------
+VAR $COUNT = 3
+WHILE ( $COUNT > 0 )
+    STRINGLN Loop iteration
+    $COUNT = ( $COUNT - 1 )
+END_WHILE
+
+REM -----------------------------------------------------
+REM FUNCTIONS
+REM -----------------------------------------------------
+FUNCTION DOTS()
+    VAR $T = 3
+    WHILE ( $T > 0 )
+        STRING .
+        DELAY 200
+        $T = ( $T - 1 )
+    END_WHILE
+END_FUNCTION
+
+STRINGLN Hello
+DOTS()
+STRINGLN World!
+
+FUNCTION CHECK_LOCKS()
+    IF (($_CAPSLOCK_ON == TRUE) && ($_NUMLOCK_ON == TRUE)) THEN
+        RETURN TRUE
+    ELSE
+        RETURN FALSE
+    END_IF
+END_FUNCTION
+
+IF ( CHECK_LOCKS() == TRUE ) THEN
+    STRINGLN Caps and Num are ON
+END_IF
+
+REM -----------------------------------------------------
+REM RANDOMIZATION
+REM -----------------------------------------------------
+$_RANDOM_MIN = 1
+$_RANDOM_MAX = 5
+VAR $R = $_RANDOM_INT
+STRINGLN Random value generated
+
+RANDOM_LOWERCASE_LETTER
+RANDOM_UPPERCASE_LETTER
+RANDOM_NUMBER
+RANDOM_SPECIAL
+RANDOM_CHAR
+
+REM -----------------------------------------------------
+REM BITWISE
+REM -----------------------------------------------------
+ATTACKMODE HID VID_05AC PID_021E
+VAR $VID = $_CURRENT_VID
+$VID = ((($VID >> 8) & 0x00FF) | (($VID << 8) & 0xFF00))
+STRINGLN Bitwise swap done
+
+REM -----------------------------------------------------
+REM HOLD / RELEASE
+REM -----------------------------------------------------
+HOLD a
+DELAY 300
+RELEASE a
+
+INJECT_MOD
+HOLD WINDOWS
+DELAY 300
+RELEASE WINDOWS
+RESET
+
+REM -----------------------------------------------------
+REM BUTTON
+REM -----------------------------------------------------
+BUTTON_DEF
+    STRINGLN Button callback fired
+END_BUTTON
+
+ENABLE_BUTTON
+STRINGLN Press the button
+DELAY 2000
+DISABLE_BUTTON
+
+WAIT_FOR_BUTTON_PRESS
+STRINGLN Button acknowledged
+
+REM -----------------------------------------------------
+REM LED CONTROL
+REM -----------------------------------------------------
+LED_R
+DELAY 300
+LED_G
+DELAY 300
+LED_OFF
+
+REM -----------------------------------------------------
+REM JITTER
+REM -----------------------------------------------------
+$_JITTER_MAX = 60
+$_JITTER_ENABLED = TRUE
+STRINGLN Jitter test
+$_JITTER_ENABLED = FALSE
+
+REM -----------------------------------------------------
+REM SAVE / RESTORE ATTACKMODE
+REM -----------------------------------------------------
+SAVE_ATTACKMODE
+ATTACKMODE OFF
+DELAY 300
+RESTORE_ATTACKMODE
+STRINGLN Attackmode restored
+
+REM -----------------------------------------------------
+REM PAYLOAD HIDING
+REM -----------------------------------------------------
+ATTACKMODE OFF
+HIDE_PAYLOAD
+ATTACKMODE HID STORAGE
+DELAY 300
+STRINGLN Payload hidden
+ATTACKMODE HID
+RESTORE_PAYLOAD
+STRINGLN Payload restored
+
+REM -----------------------------------------------------
+REM WAIT FOR LOCK
+REM -----------------------------------------------------
+STRINGLN Toggle CAPS to continue
+WAIT_FOR_CAPS_CHANGE
+
+REM -----------------------------------------------------
+REM SAVE / RESTORE HOST LOCK STATE
+REM -----------------------------------------------------
+SAVE_HOST_KEYBOARD_LOCK_STATE
+CAPSLOCK
+NUMLOCK
+RESTORE_HOST_KEYBOARD_LOCK_STATE
+
+REM -----------------------------------------------------
+REM EXFIL (SAFE)
+REM -----------------------------------------------------
+VAR $SAFE_VALUE = 1234
+EXFIL $SAFE_VALUE
+
+REM -----------------------------------------------------
+REM END
+REM -----------------------------------------------------
+STOP_PAYLOAD

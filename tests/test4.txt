@@ -1,0 +1,98 @@
+REM Test string commands and variations
+REM =====================================================
+
+ATTACKMODE HID
+
+REM Inline strings
+STRING Inline string test
+STRINGLN Inline stringln test
+
+REM String blocks
+STRING_POWERSHELL
+    Write-Host "PowerShell block"
+    Get-Process
+    $var = "test"
+END_STRING
+
+STRING_BASH
+    echo "Bash block"
+    ls -la
+    export VAR="value"
+END_STRING
+
+STRING_PYTHON
+    print("Python block")
+    def hello():
+        print("indented")
+    x = 42
+END_STRING
+
+REM Inline with terminators
+STRING This ends early END_STRING And this is ignored
+STRINGLN This ends early END_STRINGLN And this is ignored
+
+REM String delay
+STRING Slow typing mode enabled
+DELAY 100
+STRING Normal typing restored
+
+REM Special characters and escapes
+STRING Testing special chars: !@#$%^&*()
+ENTER
+STRING Quotes and brackets: "quoted" [bracketed]
+ENTER
+STRING Path test: C:\Windows\System32
+ENTER
+
+REM Multi-line strings
+STRINGLN Line one
+STRINGLN Line two
+STRINGLN Line three
+
+REM Language-specific blocks with indentation
+STRING_PYTHON
+    if True:
+        print("tab indented")
+        for i in range(3):
+            print(i)
+END_STRING
+
+STRING_BASH
+    function test() {
+        echo "bash function"
+        local var="local"
+    }
+    test
+END_STRING
+
+REM Mixed content
+STRING Start with regular string
+ENTER
+STRING_POWERSHELL
+    # PowerShell comment
+    Write-Host "Mixed content"
+END_STRING
+STRING Back to regular
+ENTER
+
+REM Edge cases
+STRING     Leading spaces preserved
+STRINGLN     Leading spaces in stringln
+
+REM Random character injection
+STRING Random tests: 
+RANDOM_LOWERCASE_LETTER
+STRING ,
+RANDOM_UPPERCASE_LETTER
+STRING ,
+RANDOM_NUMBER
+STRING ,
+RANDOM_LETTER
+STRING ,
+RANDOM_SPECIAL
+STRING ,
+RANDOM_CHAR
+ENTER
+
+STRING Test complete
+ENTER

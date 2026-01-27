@@ -1,0 +1,395 @@
+REM =====================================================
+REM FULL REGEX / KEYWORD COVERAGE (SAFE)
+REM Hits every compiler regex listed
+REM =====================================================
+
+ATTACKMODE HID
+DELAY 300
+LED_G
+
+REM =====================================================
+REM REM_BLOCK / END_REM
+REM =====================================================
+REM_BLOCK
+Multi-line
+comment block
+END_REM
+
+REM =====================================================
+REM PREPROCESSOR: DEFINE + IF_DEFINED_TRUE / IF_NOT_DEFINED_TRUE
+REM =====================================================
+DEFINE #WAIT 250
+DEFINE #TEXT Hello World
+DEFINE #SITE example.com
+DEFINE #DEFINED_THING yes
+
+IF_DEFINED_TRUE #DEFINED_THING
+  STRINGLN Defined branch
+ELSE_DEFINED
+  STRINGLN Else-defined branch
+END_IF_DEFINED
+
+IF_NOT_DEFINED_TRUE #NOT_DEFINED_THING
+  STRINGLN Not-defined branch
+ELSE_DEFINED
+  STRINGLN Else-not-defined branch
+END_IF_DEFINED
+
+REM =====================================================
+REM DEFAULT / STRING DELAYS (both spellings)
+REM =====================================================
+DEFAULTDELAY 50
+DEFAULT_DELAY 60
+
+
+REM =====================================================
+REM BASIC STRINGS + INLINE STRINGS
+REM =====================================================
+STRING #TEXT
+STRINGLN https://#SITE
+ENTER
+
+REM inline STRING ... END_STRING
+STRING Inline string works END_STRING
+REM inline STRINGLN ... END_STRING (matches your STRINGLN_INLINE_REGEX)
+STRINGLN Inline stringln works END_STRING
+
+REM STRING block (END_STRING)
+STRING
+  A
+  B
+  C
+END_STRING
+
+REM STRINGLN block (END_STRINGLN)
+STRINGLN
+  One
+  Two
+  Three
+END_STRINGLN
+
+REM =====================================================
+REM LANGUAGE-SUFFIX STRING VARIANTS (inline + block)
+REM =====================================================
+STRING_POWERSHELL Safe test END_STRING
+STRING_BASH Safe test END_STRING
+STRING_BATCH Safe test END_STRING
+STRING_PYTHON Safe test END_STRING
+STRING_HTML Safe test END_STRING
+STRING_RUBY Safe test END_STRING
+STRING_JAVASCRIPT Safe test END_STRING
+
+STRINGLN_POWERSHELL Safe test END_STRINGLN
+STRINGLN_BASH Safe test END_STRINGLN
+STRINGLN_BATCH Safe test END_STRINGLN
+STRINGLN_PYTHON Safe test END_STRINGLN
+STRINGLN_HTML Safe test END_STRINGLN
+STRINGLN_RUBY Safe test END_STRINGLN
+STRINGLN_JAVASCRIPT Safe test END_STRINGLN
+
+STRING_PYTHON
+  block
+  variant
+END_STRING
+
+STRINGLN_JAVASCRIPT
+  block
+  variant
+END_STRINGLN
+
+REM =====================================================
+REM CURSOR + SYSTEM KEYS (typical DS keys)
+REM =====================================================
+UP
+DOWN
+LEFT
+RIGHT
+HOME END
+PAGEUP PAGEDOWN
+INSERT DELETE BACKSPACE
+TAB SPACE ENTER
+ESCAPE
+PAUSE BREAK
+PRINTSCREEN
+MENU APP
+F1
+F2
+F3
+F4
+F5
+F6
+F7
+F8
+F9
+F10
+F11
+F12
+
+REM =====================================================
+REM MODIFIERS + INJECT_MOD variants
+REM =====================================================
+CTRL c
+CTRL v
+ALT TAB
+CTRL ALT DELETE
+SHIFT a
+
+INJECT_MOD WINDOWS
+DELAY 100
+
+REM INJECT_MOD with no params (tests INJECTMOD_REGEX)
+INJECT_MOD
+HOLD WINDOWS
+DELAY 200
+RELEASE WINDOWS
+
+REM =====================================================
+REM LOCK KEYS
+REM =====================================================
+CAPSLOCK
+NUMLOCK
+SCROLLLOCK
+
+REM =====================================================
+REM VARIABLES + ASSIGNMENT + HEX/DECIMAL coverage
+REM =====================================================
+VAR $A = 1337
+VAR $B = 42
+VAR $X = 0x1234
+$A = (( $A - 1295 ) * 1)
+$B = (( $B + 10 ) / 2)
+
+REM =====================================================
+REM IF / ELSE IF / ELSE / END_IF (flow control regexes)
+REM =====================================================
+IF ( $A > $B ) THEN
+  STRINGLN IF branch
+ELSE IF ( $A == $B ) THEN
+  STRINGLN ELSE IF branch
+ELSE
+  STRINGLN ELSE branch
+END_IF
+
+REM =====================================================
+REM WHILE / END_WHILE
+REM =====================================================
+VAR $COUNT = 3
+WHILE ( $COUNT > 0 )
+  STRINGLN Looping
+  $COUNT = ( $COUNT - 1 )
+END_WHILE
+
+REM =====================================================
+REM REPEAT (repeats previous line)
+REM =====================================================
+STRINGLN RepeatMe
+REPEAT 2
+
+REM =====================================================
+REM FUNCTIONS + RETURN + CALL (both call regexes)
+REM =====================================================
+FUNCTION DOTS()
+  VAR $T = 3
+  WHILE ( $T > 0 )
+    STRING .
+    DELAY 50
+    $T = ( $T - 1 )
+  END_WHILE
+END_FUNCTION
+
+DOTS()
+
+FUNCTION CHECK_LOCKS()
+  IF ( ( $_CAPSLOCK_ON == TRUE ) && ( $_NUMLOCK_ON == TRUE ) ) THEN
+    RETURN TRUE
+  ELSE
+    RETURN FALSE
+  END_IF
+END_FUNCTION
+
+IF ( CHECK_LOCKS() == TRUE ) THEN
+  STRINGLN Locks ON
+END_IF
+
+REM =====================================================
+REM RANDOMIZATION: vars + commands
+REM =====================================================
+$_RANDOM_MIN = 1
+$_RANDOM_MAX = 9
+VAR $R = $_RANDOM_INT
+VAR $SEED = $_RANDOM_SEED
+
+VAR $R1 = $_RANDOM_LOWER_LETTER_KEYCODE
+VAR $R2 = $_RANDOM_UPPER_LETTER_KEYCODE
+VAR $R3 = $_RANDOM_LETTER_KEYCODE
+VAR $R4 = $_RANDOM_NUMBER_KEYCODE
+VAR $R5 = $_RANDOM_SPECIAL_KEYCODE
+VAR $R6 = $_RANDOM_CHAR_KEYCODE
+
+RANDOM_LOWERCASE_LETTER
+RANDOM_UPPERCASE_LETTER
+RANDOM_LETTER
+RANDOM_NUMBER
+RANDOM_SPECIAL
+RANDOM_CHAR
+
+REM =====================================================
+REM ATTACKMODE matrix + current vars
+REM =====================================================
+ATTACKMODE HID VID_RANDOM PID_RANDOM MAN_RANDOM PROD_RANDOM SERIAL_RANDOM
+DELAY 200
+
+VAR $VID = $_CURRENT_VID
+VAR $PID = $_CURRENT_PID
+VAR $MODE = $_CURRENT_ATTACKMODE
+
+ATTACKMODE HID STORAGE VID_05AC PID_021E MAN_HAK5 PROD_DUCKY SERIAL_1337
+DELAY 200
+
+SAVE_ATTACKMODE
+ATTACKMODE OFF
+DELAY 100
+RESTORE_ATTACKMODE
+
+REM =====================================================
+REM PAYLOAD HIDING
+REM =====================================================
+ATTACKMODE OFF
+HIDE_PAYLOAD
+ATTACKMODE HID STORAGE
+DELAY 100
+RESTORE_PAYLOAD
+ATTACKMODE HID
+
+REM =====================================================
+REM BUTTON SYSTEM
+REM =====================================================
+BUTTON_DEF
+  STRINGLN Button Fired
+END_BUTTON
+
+ENABLE_BUTTON
+VAR $BTN = $_BUTTON_ENABLED
+VAR $BTNDEF = $_BUTTON_USER_DEFINED
+VAR $BTNPUSH = $_BUTTON_PUSH_RECEIVED
+$_BUTTON_TIMEOUT = 500
+DELAY 500
+DISABLE_BUTTON
+
+WAIT_FOR_BUTTON_PRESS
+
+REM =====================================================
+REM RESTORE HOST LOCK STATE (regex present)
+REM =====================================================
+SAVE_HOST_KEYBOARD_LOCK_STATE
+CAPSLOCK
+NUMLOCK
+SCROLLLOCK
+VAR $SCAPS = $_SAVED_CAPSLOCK_ON
+VAR $SNUM = $_SAVED_NUMLOCK_ON
+VAR $SSCR = $_SAVED_SCROLLLOCK_ON
+VAR $LEDREP = $_RECEIVED_HOST_LOCK_LED_REPLY
+RESTORE_HOST_KEYBOARD_LOCK_STATE
+
+REM =====================================================
+REM OS DETECT INTERNALS
+REM =====================================================
+VAR $REQS = $_HOST_CONFIGURATION_REQUEST_COUNT
+VAR $OS = $_OS
+
+REM =====================================================
+REM LED INTERNAL VARIABLES
+REM =====================================================
+$_SYSTEM_LEDS_ENABLED = TRUE
+$_STORAGE_LEDS_ENABLED = TRUE
+$_LED_CONTINUOUS_SHOW_STORAGE_ACTIVITY = TRUE
+$_INJECTING_LEDS_ENABLED = TRUE
+$_EXFIL_LEDS_ENABLED = TRUE
+$_LED_SHOW_CAPS = TRUE
+$_LED_SHOW_NUM = TRUE
+$_LED_SHOW_SCROLL = TRUE
+
+LED_R
+DELAY 50
+LED_G
+DELAY 50
+LED_OFF
+
+REM =====================================================
+REM JITTER
+REM =====================================================
+$_JITTER_MAX = 60
+$_JITTER_ENABLED = TRUE
+STRINGLN Jitter Enabled
+$_JITTER_ENABLED = FALSE
+
+REM =====================================================
+REM STORAGE INTERNALS
+REM =====================================================
+$_STORAGE_ACTIVITY_TIMEOUT = 500
+
+REM =====================================================
+REM EXFILTRATION (var exfil + mode enable)
+REM =====================================================
+VAR $SAFE = 1234
+$_EXFIL_MODE_ENABLED = TRUE
+EXFIL $SAFE
+$_EXFIL_MODE_ENABLED = FALSE
+
+REM =====================================================
+REM DELAY var + plain delay
+REM =====================================================
+VAR $WAIT = 250
+DELAY $WAIT
+DELAY 70
+
+REM =====================================================
+REM INJECT / KEYCODE / INJECT_VAR (regex coverage)
+REM =====================================================
+VAR $KC = 4
+INJECT 0x04
+KEYCODE 0x04
+INJECT_VAR $KC
+
+REM =====================================================
+REM RAW HID KEY/MOD DOWN/UP (regex coverage)
+REM =====================================================
+MOD_DOWN 0x02
+KEY_DOWN 0x04
+KEY_UP 0x04
+MOD_UP 0x02
+
+MOD_KEY_DOWN 0x02 0x04
+MOD_KEY_UP 0x02 0x04
+
+REM =====================================================
+REM STAGE / END_STAGE (compiler feature)
+REM =====================================================
+STAGE 1
+  STRINGLN Stage One
+END_STAGE
+
+REM =====================================================
+REM EXTENSION / END_EXTENSION (compiler feature)
+REM =====================================================
+EXTENSION OS_DETECT
+  STRINGLN Extension Block
+END_EXTENSION
+
+REM =====================================================
+REM DEBUGGER / LINE BREAKPOINTS (regex coverage)
+REM =====================================================
+INJECT_BREAKPOINT_LINE_NUMBER 123
+DEBUGGER_BREAKPOINT
+
+REM =====================================================
+REM PREPROCESSOR_DISABLED (place at end so it can't disrupt earlier defines)
+REM =====================================================
+PREPROCESSOR_DISABLED
+
+REM =====================================================
+REM PAYLOAD CONTROL
+REM =====================================================
+RESET
+RESTART_PAYLOAD
+STOP_PAYLOAD

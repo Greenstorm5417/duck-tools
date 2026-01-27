@@ -1,0 +1,154 @@
+REM Test7 - Missing/Undertested Features
+REM =====================================================
+
+ATTACKMODE HID
+
+REM SAVE/RESTORE tested but verify both work
+SAVE_HOST_KEYBOARD_LOCK_STATE
+CAPSLOCK
+NUMLOCK
+SCROLLLOCK
+RESTORE_HOST_KEYBOARD_LOCK_STATE
+
+REM Complex nested control flow
+VAR $depth = 0
+IF ($depth < 5) THEN
+    VAR $inner = 0
+    WHILE ($inner < 2)
+        IF ($inner > 0) THEN
+            STRING Nested deep
+            ENTER
+        ELSE IF ($inner == 0) THEN
+            STRING First iteration
+            ENTER
+        ELSE
+            STRING Should not reach
+            ENTER
+        END_IF
+        $inner = ($inner + 1)
+    END_WHILE
+END_IF
+
+REM Complex expressions
+VAR $a = 10
+VAR $b = 20
+VAR $c = (($a + $b) * 2) - 5
+VAR $d = ($a > $b)
+VAR $e = ($a == 10)
+
+REM All comparison operators
+IF ($a != $b) THEN
+    STRING Not equal works
+    ENTER
+END_IF
+
+IF ($a <= $b) THEN
+    STRING Less than or equal works
+    ENTER
+END_IF
+
+IF ($b >= $a) THEN
+    STRING Greater than or equal works  
+    ENTER
+END_IF
+
+REM REPEAT (repeats the previous line only)
+STRING Repeat iteration
+ENTER
+REPEAT 3
+
+REM Multiple function calls in sequence
+FUNCTION test_func()
+    STRING Inside function
+    ENTER
+END_FUNCTION
+
+test_func()
+test_func()
+
+REM Nested functions (inner must be defined first)
+FUNCTION inner()
+    STRING Inner function
+    ENTER
+END_FUNCTION
+
+FUNCTION outer()
+    STRING Outer start
+    ENTER
+    inner()
+    STRING Outer end
+    ENTER
+END_FUNCTION
+
+outer()
+
+REM All reserved variable types
+VAR $rand = $_RANDOM_INT
+STRING Random int test
+ENTER
+
+$_JITTER_ENABLED = TRUE
+$_JITTER_MAX = 100
+STRING Jitter configured
+ENTER
+
+REM Set ATTACKMODE with VID/PID first, then access $_CURRENT_VID/_PID
+ATTACKMODE HID VID_05AC PID_021E
+VAR $vid_val = $_CURRENT_VID
+VAR $pid_val = $_CURRENT_PID
+STRING VID and PID captured
+ENTER
+
+REM EXFIL test
+VAR $secret = 9999
+$_EXFIL_MODE_ENABLED = TRUE
+EXFIL $secret
+$_EXFIL_MODE_ENABLED = FALSE
+
+REM LED operations sequence
+LED_R
+DELAY 100
+LED_G  
+DELAY 100
+LED_OFF
+DELAY 100
+
+REM BUTTON_DEF
+BUTTON_DEF BUTTON1
+    STRING Button 1 handler
+    ENTER
+END_BUTTON
+
+REM All ATTACKMODE combinations
+ATTACKMODE OFF
+DELAY 100
+ATTACKMODE HID
+DELAY 100
+ATTACKMODE STORAGE
+DELAY 100
+ATTACKMODE HID STORAGE
+DELAY 100
+
+REM Assignment with complex expression
+VAR $result = (5 + 3) * (10 - 2)
+STRING Result computed
+ENTER
+
+REM Boolean operations (if implemented)
+VAR $true_val = TRUE
+VAR $false_val = FALSE
+IF ($true_val == TRUE) THEN
+    STRING Boolean works
+    ENTER
+END_IF
+
+REM Multiple variable operations
+VAR $counter = 0
+WHILE ($counter < 5)
+    $counter = ($counter + 1)
+END_WHILE
+
+REM Final test
+STRING Test7 complete
+ENTER
+DELAY 1000

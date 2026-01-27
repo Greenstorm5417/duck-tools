@@ -1,0 +1,81 @@
+REM Test control flow structures and conditionals
+REM =====================================================
+
+ATTACKMODE HID
+
+REM Variable declarations
+VAR $counter = 0
+VAR $max = 5
+VAR $result = 0
+
+REM IF/ELSE structures
+IF ($counter < $max) THEN
+    STRING Counter is less than max
+    ENTER
+ELSE
+    STRING Counter equals or exceeds max
+    ENTER
+END_IF
+
+REM Nested IF
+VAR $x = 10
+VAR $y = 20
+
+IF ($x > 5) THEN
+    IF ($y > 15) THEN
+        STRING Both conditions met
+        ENTER
+    ELSE
+        STRING Only x condition met
+        ENTER
+    END_IF
+END_IF
+
+REM ELSE IF chains
+VAR $grade = 85
+
+IF ($grade >= 90) THEN
+    STRING Grade A
+    ENTER
+ELSE IF ($grade >= 80) THEN
+    STRING Grade B
+    ENTER
+ELSE IF ($grade >= 70) THEN
+    STRING Grade C
+    ENTER
+ELSE
+    STRING Grade F
+    ENTER
+END_IF
+
+REM WHILE loops
+VAR $i = 0
+WHILE ($i < 3)
+    STRING Loop iteration: 
+    $i = ($i + 1)
+    DELAY 100
+END_WHILE
+
+REM Nested WHILE
+VAR $outer = 0
+WHILE ($outer < 2)
+    VAR $inner = 0
+    WHILE ($inner < 2)
+        STRING Outer: $outer Inner: $inner
+        ENTER
+        $inner = ($inner + 1)
+    END_WHILE
+    $outer = ($outer + 1)
+END_WHILE
+
+REM Complex expressions
+VAR $a = 10
+VAR $b = 20
+VAR $c = ($a + $b) * 2
+
+IF (($a + $b) > 25) THEN
+    STRING Sum exceeds 25
+    ENTER
+END_IF
+
+DELAY 500

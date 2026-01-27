@@ -1,0 +1,83 @@
+REM Test functions and function calls
+REM =====================================================
+
+ATTACKMODE HID STORAGE
+
+REM Function definitions
+FUNCTION greet()
+    STRING Hello from function
+    ENTER
+END_FUNCTION
+
+FUNCTION add_numbers()
+    VAR $num1 = 5
+    VAR $num2 = 10
+    VAR $sum = ($num1 + $num2)
+    STRING Sum is: 
+    INJECT_VAR $sum
+    ENTER
+END_FUNCTION
+
+FUNCTION nested_call()
+    STRING Calling greet from nested_call
+    ENTER
+    greet()
+    STRING Back in nested_call
+    ENTER
+END_FUNCTION
+
+FUNCTION with_params()
+    VAR $local = 42
+    STRING Local variable: 
+    INJECT_VAR $local
+    ENTER
+END_FUNCTION
+
+FUNCTION early_return()
+    STRING Before return
+    ENTER
+    STRING This should not execute
+    ENTER
+END_FUNCTION
+
+REM Main payload starts here
+STRING Starting function tests
+ENTER
+DELAY 500
+
+REM Call functions
+greet()
+DELAY 200
+
+add_numbers()
+DELAY 200
+
+nested_call()
+DELAY 200
+
+with_params()
+DELAY 200
+
+early_return()
+DELAY 200
+
+REM Function with control flow
+FUNCTION control_flow_test()
+    VAR $value = 15
+    IF ($value > 10) THEN
+        STRING Value is greater than 10
+        ENTER
+    END_IF
+    
+    VAR $j = 0
+    WHILE ($j < 2)
+        STRING Function loop iteration
+        ENTER
+        $j = ($j + 1)
+    END_WHILE
+END_FUNCTION
+
+control_flow_test()
+
+STRING All function tests completed
+ENTER
