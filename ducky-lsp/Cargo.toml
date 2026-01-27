@@ -1,0 +1,15 @@
+[package]
+name = "ducky-lsp"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "ducky-lsp"
+path = "src/main.rs"
+
+[dependencies]
+ducky-core = { path = "../ducky-core" }
+tower-lsp = { workspace = true }
+tokio = { workspace = true }
+dashmap = { workspace = true }
+serde_json = { workspace = true }

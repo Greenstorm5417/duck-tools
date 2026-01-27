@@ -1,5 +1,5 @@
 use clap::Parser;
-use ducky_parse::{DuckyCompiler, KeyboardLayout};
+use ducky_core::{DuckyCompiler, KeyboardLayout};
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::PathBuf;

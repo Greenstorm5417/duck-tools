@@ -1,0 +1,16 @@
+[package]
+name = "ducky-cli"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "ducky-parse"
+path = "src/main.rs"
+
+[dependencies]
+ducky-core = { path = "../ducky-core" }
+clap = { workspace = true, features = ["derive"] }
+sha2.workspace = true
+hex.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true

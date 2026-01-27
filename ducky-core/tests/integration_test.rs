@@ -1,4 +1,4 @@
-use ducky_parse::DuckyCompiler;
+use ducky_core::DuckyCompiler;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::PathBuf;
