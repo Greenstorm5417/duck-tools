@@ -142,8 +142,14 @@ fn build_command(
         input_path
     } else {
         let config = load_config(config_path);
-        if let Some(main_file) = config.workspace.main_file {
-            PathBuf::from(main_file)
+        if let Some(cfg) = config {
+            if let Some(main_file) = cfg.workspace.main_file {
+                PathBuf::from(main_file)
+            } else {
+                eprintln!("Error: No input file specified.");
+                eprintln!("  Use -i <file> or set workspace.main_file in duck.toml");
+                std::process::exit(1);
+            }
         } else {
             eprintln!("Error: No input file specified.");
             eprintln!("  Use -i <file> or set workspace.main_file in duck.toml");
@@ -239,7 +245,7 @@ fn build_command(
 
     let payload_percent = (result.len() as f64 / 16384.0) * 100.0;
 
-    println!("✓ Successfully compiled {} into {}", 
+    println!("Successfully compiled {} into {}", 
         input.display(), 
         output_path.display()
     );
@@ -273,18 +279,59 @@ fn build_command(
 fn init_command(output: Option<PathBuf>) {
     let config_path = output.unwrap_or_else(|| PathBuf::from("duck.toml"));
     
-    let config = DuckyConfig {
-        workspace: WorkspaceConfig {
-            name: None,
-            version: None,
-            main_file: Some("helloworld.txt".to_string()),
-        },
-        formatter: None,
-        linter: None,
+    // Check if config already exists
+    let mut config = if config_path.exists() {
+        println!("Found existing configuration: {}", config_path.display());
+        match fs::read_to_string(&config_path) {
+            Ok(content) => match toml::from_str(&content) {
+                Ok(existing_config) => existing_config,
+                Err(e) => {
+                    eprintln!("Warning: Failed to parse existing config: {}", e);
+                    eprintln!("Creating new configuration.");
+                    DuckyConfig {
+                        workspace: WorkspaceConfig {
+                            name: None,
+                            version: None,
+                            main_file: Some("helloworld.txt".to_string()),
+                        },
+                        formatter: None,
+                        linter: None,
+                    }
+                }
+            },
+            Err(e) => {
+                eprintln!("Warning: Failed to read existing config: {}", e);
+                eprintln!("Creating new configuration.");
+                DuckyConfig {
+                    workspace: WorkspaceConfig {
+                        name: None,
+                        version: None,
+                        main_file: Some("helloworld.txt".to_string()),
+                    },
+                    formatter: None,
+                    linter: None,
+                }
+            }
+        }
+    } else {
+        DuckyConfig {
+            workspace: WorkspaceConfig {
+                name: None,
+                version: None,
+                main_file: Some("helloworld.txt".to_string()),
+            },
+            formatter: None,
+            linter: None,
+        }
     };
     
-    let toml_str = toml::to_string_pretty(&config).expect("Failed to serialize config");
+    // Ensure workspace.main_file is set if missing
+    if config.workspace.main_file.is_none() {
+        config.workspace.main_file = Some("helloworld.txt".to_string());
+        println!("  Added workspace.main_file = \"helloworld.txt\"");
+    }
     
+    let toml_str = toml::to_string_pretty(&config).expect("Failed to serialize config");
     let content = format!("# DuckyScript Configuration File\n# Run 'duck fmt' or 'duck lint' to add formatter/linter sections\n\n{}", toml_str);
     
     if let Err(e) = fs::write(&config_path, content) {
@@ -292,23 +339,31 @@ fn init_command(output: Option<PathBuf>) {
         std::process::exit(1);
     }
     
-    // Create helloworld.txt example
-    let hello_world = r#"REM DuckyScript Hello World Example
+    // Create helloworld.txt example only if it doesn't exist
+    let hello_path = PathBuf::from("helloworld.txt");
+    if hello_path.exists() {
+        println!("  Skipped: {} already exists", hello_path.display());
+    } else {
+        let hello_world = r#"REM DuckyScript Hello World Example
 REM This is a simple example to get you started
 
 DELAY 1000
 STRING Hello, World!
 ENTER
 "#;
-    
-    let hello_path = PathBuf::from("helloworld.txt");
-    if let Err(e) = fs::write(&hello_path, hello_world) {
-        eprintln!("Warning: Failed to create helloworld.txt: {}", e);
-    } else {
-        println!("✓ Created example file: {}", hello_path.display());
+        
+        if let Err(e) = fs::write(&hello_path, hello_world) {
+            eprintln!("Warning: Failed to create helloworld.txt: {}", e);
+        } else {
+            println!("Created example file: {}", hello_path.display());
+        }
     }
     
-    println!("✓ Created configuration file: {}", config_path.display());
+    if config_path.exists() {
+        println!("Updated configuration file: {}", config_path.display());
+    } else {
+        println!("Created configuration file: {}", config_path.display());
+    }
     println!("  Run 'duck fmt' or 'duck lint' to add tool-specific configuration.");
     println!("  Run 'duck build -i helloworld.txt' to compile the example.");
 }
@@ -337,19 +392,19 @@ fn update_command() {
     match status {
         Ok(exit_status) if exit_status.success() => {
             println!();
-            println!("✓ Update completed successfully!");
+            println!("Update completed successfully!");
             println!("  Please restart your terminal to use the new version.");
         }
         Ok(exit_status) => {
             eprintln!();
-            eprintln!("✗ Update failed with exit code: {}", exit_status);
+            eprintln!("Update failed with exit code: {}", exit_status);
             eprintln!("  Try re-running the installer manually:");
             eprintln!("  curl -L https://github.com/Greenstorm5417/duck-tools/releases/latest/download/install.sh | sh");
             std::process::exit(1);
         }
         Err(e) => {
             eprintln!();
-            eprintln!("✗ Failed to run updater: {}", e);
+            eprintln!("Failed to run updater: {}", e);
             eprintln!("  Make sure cargo-dist-updater is installed in the same directory as duck.");
             eprintln!("  Or re-run the installer manually:");
             eprintln!("  curl -L https://github.com/Greenstorm5417/duck-tools/releases/latest/download/install.sh | sh");
@@ -384,62 +439,47 @@ fn find_config_file(config_path: Option<PathBuf>) -> Option<PathBuf> {
     None
 }
 
-fn load_config(config_path: Option<PathBuf>) -> DuckyConfig {
-    let path = find_config_file(config_path);
+fn load_config(config_path: Option<PathBuf>) -> Option<DuckyConfig> {
+    let path = find_config_file(config_path)?;
     
-    if let Some(path) = path {
-        match fs::read_to_string(&path) {
-            Ok(content) => match toml::from_str(&content) {
-                Ok(config) => config,
-                Err(e) => {
-                    eprintln!("Warning: Failed to parse config file: {}", e);
-                    eprintln!("Using default configuration.");
-                    DuckyConfig {
-                        workspace: WorkspaceConfig::default(),
-                        formatter: None,
-                        linter: None,
-                    }
-                }
-            },
+    match fs::read_to_string(&path) {
+        Ok(content) => match toml::from_str(&content) {
+            Ok(config) => Some(config),
             Err(e) => {
-                eprintln!("Warning: Failed to read config file: {}", e);
-                eprintln!("Using default configuration.");
-                DuckyConfig {
-                    workspace: WorkspaceConfig::default(),
-                    formatter: None,
-                    linter: None,
-                }
+                eprintln!("Error: Failed to parse config file: {}", e);
+                None
             }
-        }
-    } else {
-        DuckyConfig {
-            workspace: WorkspaceConfig::default(),
-            formatter: None,
-            linter: None,
+        },
+        Err(e) => {
+            eprintln!("Error: Failed to read config file: {}", e);
+            None
         }
     }
-}
-
-fn save_config(config: &DuckyConfig, config_path: Option<PathBuf>) -> Result<PathBuf, std::io::Error> {
-    let path = config_path.or_else(|| find_config_file(None)).unwrap_or_else(|| PathBuf::from("duck.toml"));
-    let toml_str = toml::to_string_pretty(config).expect("Failed to serialize config");
-    let content = format!("# DuckyScript Configuration File\n\n{}", toml_str);
-    fs::write(&path, content)?;
-    Ok(path)
 }
 
 fn fmt_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: bool, verbose: bool) {
-    let mut config = load_config(config_path.clone());
-    
-    // Add formatter section if it doesn't exist
-    if config.formatter.is_none() {
-        config.formatter = Some(FormatterConfig::default());
-        if let Ok(saved_path) = save_config(&config, config_path.clone()) {
-            if verbose {
-                println!("Added [formatter] section to {}", saved_path.display());
-            }
+    let config = match load_config(config_path.clone()) {
+        Some(cfg) => cfg,
+        None => {
+            eprintln!("Error: No configuration file found.");
+            eprintln!("  Run 'duck init' to create duck.toml");
+            std::process::exit(1);
         }
-    }
+    };
+    
+    // If no input files specified, try to use workspace.main_file
+    let inputs = if inputs.is_empty() {
+        if let Some(main_file) = &config.workspace.main_file {
+            vec![PathBuf::from(main_file)]
+        } else {
+            eprintln!("Error: No input files specified.");
+            eprintln!("  Usage: duck fmt <file1> <file2> ...");
+            eprintln!("  Or set workspace.main_file in duck.toml");
+            std::process::exit(1);
+        }
+    } else {
+        inputs
+    };
     
     let mut formatter_config = config.formatter.unwrap_or_default();
     formatter_config.enabled = true;
@@ -447,6 +487,7 @@ fn fmt_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: bool
     let formatter = DuckyFormatter::new(formatter_config);
     let mut total_files = 0;
     let mut formatted_files = 0;
+    let mut total_changes = 0;
     let mut errors = 0;
     
     for input in inputs {
@@ -473,9 +514,16 @@ fn fmt_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: bool
         if source != formatted {
             formatted_files += 1;
             
+            // Count changed lines
+            let changes = source.lines().zip(formatted.lines())
+                .filter(|(a, b)| a != b)
+                .count()
+                + (source.lines().count() as isize - formatted.lines().count() as isize).abs() as usize;
+            total_changes += changes;
+            
             if dry_run {
                 if verbose {
-                    println!("Would format {}", input.display());
+                    println!("Would format {} ({} changes)", input.display(), changes);
                 }
             } else {
                 if let Err(e) = fs::write(&input, formatted) {
@@ -484,18 +532,26 @@ fn fmt_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: bool
                     continue;
                 }
                 if verbose {
-                    println!("✓ Formatted {}", input.display());
+                    println!("Formatted {} ({} changes)", input.display(), changes);
                 }
             }
         } else if verbose {
-            println!("✓ Already formatted {}", input.display());
+            println!("Already formatted {}", input.display());
         }
     }
     
     if dry_run {
-        println!("\n{} file(s) would be formatted", formatted_files);
+        if formatted_files > 0 {
+            println!("\n{} file(s) would be formatted ({} changes)", formatted_files, total_changes);
+        } else {
+            println!("\nNo files need formatting");
+        }
     } else {
-        println!("\n✓ Formatted {} of {} file(s)", formatted_files, total_files);
+        if formatted_files > 0 {
+            println!("\nFormatted {} of {} file(s) ({} changes)", formatted_files, total_files, total_changes);
+        } else {
+            println!("\nNo files needed formatting");
+        }
     }
     
     if errors > 0 {
@@ -505,17 +561,28 @@ fn fmt_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: bool
 }
 
 fn lint_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: bool, verbose: bool) {
-    let mut config = load_config(config_path.clone());
-    
-    // Add linter section if it doesn't exist
-    if config.linter.is_none() {
-        config.linter = Some(LinterConfig::default());
-        if let Ok(saved_path) = save_config(&config, config_path.clone()) {
-            if verbose {
-                println!("Added [linter] section to {}", saved_path.display());
-            }
+    let config = match load_config(config_path.clone()) {
+        Some(cfg) => cfg,
+        None => {
+            eprintln!("Error: No configuration file found.");
+            eprintln!("  Run 'duck init' to create duck.toml");
+            std::process::exit(1);
         }
-    }
+    };
+    
+    // If no input files specified, try to use workspace.main_file
+    let inputs = if inputs.is_empty() {
+        if let Some(main_file) = &config.workspace.main_file {
+            vec![PathBuf::from(main_file)]
+        } else {
+            eprintln!("Error: No input files specified.");
+            eprintln!("  Usage: duck lint <file1> <file2> ...");
+            eprintln!("  Or set workspace.main_file in duck.toml");
+            std::process::exit(1);
+        }
+    } else {
+        inputs
+    };
     
     let mut linter_config = config.linter.unwrap_or_default();
     linter_config.enabled = true;
@@ -559,7 +626,7 @@ fn lint_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: boo
             total_warnings += issues.iter().filter(|i| i.severity == LintSeverity::Warning).count();
             total_infos += issues.iter().filter(|i| i.severity == LintSeverity::Info).count();
         } else if verbose {
-            println!("✓ No issues in {}", input.display());
+            println!("No issues in {}", input.display());
         }
     }
     
@@ -575,6 +642,6 @@ fn lint_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: boo
             std::process::exit(1);
         }
     } else {
-        println!("✓ No linting issues found");
+        println!("No linting issues found");
     }
 }

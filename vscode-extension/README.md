@@ -1,126 +1,84 @@
 # DuckyScript Language Support
 
-Full language support for DuckyScript 3.0 with syntax highlighting, LSP features, and more.
+DuckyScript language support for VS Code.
+
+This extension uses the `ducky-lsp` language server for diagnostics, completions, hover help, formatting, and more.
+
+> Disclaimer: This project is an independent, unofficial work and is not affiliated with, endorsed by, sponsored by, or associated with Hak5, USB Rubber Ducky, Payload Studio, or any related products or trademarks.
 
 ## Features
 
-- 🎨 **Syntax Highlighting** - Full DuckyScript 3.0 syntax support
-- 🔍 **Diagnostics** - Real-time error and warning detection
-- 💡 **Auto-completion** - Smart completions for commands, variables, and keywords
-- 📖 **Hover Information** - Documentation on hover
-- 🔗 **Go to Definition** - Jump to variable/label definitions
-- 🔎 **Find References** - Find all usages of variables/labels
-- ✏️ **Rename Symbol** - Rename variables/labels across file
-- 📋 **Document Outline** - Navigate code structure
-- 🔧 **Code Actions** - Quick fixes for common issues
-- 🎯 **Code Lenses** - Inline reference counts
-- 📝 **Formatting** - Auto-format your code
-- ⚡ **And much more!**
+- Syntax highlighting
+- LSP-based diagnostics
+- Completions
+- Hover documentation
+- Go to definition / find references
+- Formatting
 
-## Installation
+## Requirements
 
-### 1. Install the Duck Toolchain
+- Install `ducky-lsp` (required)
+- Install `duck` CLI (optional, required for the `DuckyScript: Compile Current File` command)
 
-The extension requires the `ducky-lsp` language server, which is installed with the duck toolchain.
+## Install ducky-lsp
 
-**Windows (PowerShell):**
+Windows (PowerShell):
+
 ```powershell
-irm https://github.com/Greenstorm5417/duck-tools/releases/latest/download/install.ps1 | iex
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/Greenstorm5417/duck-tools/releases/latest/download/ducky-lsp-installer.ps1 | iex"
 ```
 
-**macOS/Linux:**
+macOS/Linux:
+
 ```bash
-curl -L https://github.com/Greenstorm5417/duck-tools/releases/latest/download/install.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Greenstorm5417/duck-tools/releases/latest/download/ducky-lsp-installer.sh | sh
 ```
 
-### 2. Install the VS Code Extension
+## Install duck CLI
 
-Search for "DuckyScript" in the VS Code Extensions marketplace and install.
+Windows (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/Greenstorm5417/duck-tools/releases/latest/download/ducky-cli-installer.ps1 | iex"
+```
+
+macOS/Linux:
+
+```bash
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Greenstorm5417/duck-tools/releases/latest/download/ducky-cli-installer.sh | sh
+```
 
 ## Configuration
 
-The extension will automatically find the `ducky-lsp` binary if it's in your PATH.
+### LSP path
 
-### Custom LSP Path
+The extension tries to find `ducky-lsp` automatically (PATH + standard install locations).
 
-If the LSP is not found automatically, configure it in your `settings.json`:
-
-```json
-{
-  "duckyscript.lsp.path": "/path/to/ducky-lsp"
-}
-```
-
-**Default locations:**
-- Windows: `%USERPROFILE%\.duck\bin\ducky-lsp.exe`
-- macOS/Linux: `~/.duck/bin/ducky-lsp`
-
-### LSP Features
-
-Enable/disable specific LSP features:
+If needed, set a custom path:
 
 ```json
 {
-  "duckyscript.lsp.enable": true,
-  "duckyscript.lsp.hover.enable": true,
-  "duckyscript.lsp.completion.enable": true,
-  "duckyscript.lsp.diagnostics.enable": true,
-  "duckyscript.lsp.formatting.enable": true
+  "duckyscript.lsp.path": "C:\\Program Files\\ducky-lsp\\bin\\ducky-lsp.exe"
 }
 ```
 
-## Usage
+### CLI path
 
-### Compile Current File
+The compile command uses `duck build -i <file>`.
 
-- **Keyboard**: `Ctrl+Shift+B` (Windows/Linux) or `Cmd+Shift+B` (macOS)
-- **Command Palette**: `DuckyScript: Compile Current File`
-- **Editor Title Bar**: Click the ▶️ play button
+If `duck` is not in PATH, set a custom path:
 
-### Format Document
-
-- **Keyboard**: `Shift+Alt+F` (Windows/Linux) or `Shift+Option+F` (macOS)
-- **Command Palette**: `Format Document`
+```json
+{
+  "duckyscript.cli.path": "C:\\Program Files\\ducky-cli\\bin\\duck.exe"
+}
+```
 
 ## Commands
 
-- `duck build` - Compile DuckyScript to inject.bin
-- `duck fmt` - Format DuckyScript files
-- `duck lint` - Lint DuckyScript files
-- `duck init` - Initialize a new project with duck.toml
-- `duck version` - Show version information
-- `duck update` - Update to latest version
-
-## File Association
-
-The extension activates for `.txt` files containing DuckyScript code.
-
-## Troubleshooting
-
-### LSP Not Starting
-
-1. Verify `ducky-lsp` is installed:
-   ```bash
-   ducky-lsp --version
-   ```
-
-2. Check the Output panel: `View → Output → DuckyScript Language Server`
-
-3. Manually set the LSP path in settings
-
-### Compilation Issues
-
-Make sure `duck` is in your PATH:
-```bash
-duck --version
-```
+- `DuckyScript: Compile Current File` (`Ctrl+Shift+B`)
 
 ## Links
 
-- [GitHub Repository](https://github.com/Greenstorm5417/duck-tools)
-- [Report Issues](https://github.com/Greenstorm5417/duck-tools/issues)
-- [DuckyScript Documentation](https://docs.hak5.org/hak5-usb-rubber-ducky)
-
-## License
-
-MIT License - See LICENSE file for details
+- Repository: https://github.com/Greenstorm5417/duck-tools
+- Issues: https://github.com/Greenstorm5417/duck-tools/issues

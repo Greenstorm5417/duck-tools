@@ -3,7 +3,7 @@ members = ["ducky-core", "ducky-cli", "ducky-lsp", "ducky-fmt", "ducky-lint"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.0.1-beta.1"
 edition = "2024"
 authors = ["Greenstorm5417"]
 repository = "https://github.com/Greenstorm5417/duck-tools"
@@ -13,6 +13,7 @@ license = "MIT"
 keywords = ["duckyscript", "compiler", "usb-rubber-ducky", "hak5"]
 categories = ["command-line-utilities", "development-tools"]
 publish = false
+doctest = false
 
 [workspace.dependencies]
 regex = "1.10"
@@ -40,6 +41,7 @@ overflow-checks = false
 incremental = false
 rpath = false
 split-debuginfo = "off" 
+
 
 
 # The profile that 'dist' will build with

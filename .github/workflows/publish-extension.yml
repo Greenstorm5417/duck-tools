@@ -1,0 +1,49 @@
+name: Publish VS Code Extension
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to publish (branch, tag, or SHA). Leave empty to use default ref.
+        required: false
+        default: ""
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: vscode-extension/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: vscode-extension
+
+      - name: Build extension
+        run: npm run compile
+        working-directory: vscode-extension
+
+      - name: Install vsce/ovsx
+        run: npm install -g @vscode/vsce ovsx
+
+      - name: Publish to VS Code Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: vsce publish -p "$VSCE_PAT"
+        working-directory: vscode-extension
+
+      - name: Publish to Open VSX
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: ovsx publish -p "$OVSX_PAT"
+        working-directory: vscode-extension

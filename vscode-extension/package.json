@@ -3,13 +3,17 @@
   "displayName": "DuckyScript Language Support",
   "description": "DuckyScript 3.0 language support with LSP",
   "version": "0.1.0",
-  "publisher": "ducky",
+  "publisher": "Greenstorm5417",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Greenstorm5417/duck-tools"
+  },
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.108.0"
   },
   "categories": ["Programming Languages"],
-  "activationEvents": ["onLanguage:duckyscript"],
   "main": "./out/extension.js",
+  "activationEvents": ["onLanguage:duckyscript"],
   "contributes": {
     "languages": [{
       "id": "duckyscript",
@@ -36,6 +40,18 @@
           "type": "boolean",
           "default": true,
           "description": "Enable/disable the DuckyScript Language Server.",
+          "scope": "window"
+        },
+        "duckyscript.lsp.path": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to the ducky-lsp executable. Leave empty to auto-detect from PATH or standard install locations.",
+          "scope": "window"
+        },
+        "duckyscript.cli.path": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to the duck CLI executable (duck or duck.exe). Leave empty to auto-detect from PATH or standard install locations.",
           "scope": "window"
         },
         "duckyscript.extension.autoFold": {

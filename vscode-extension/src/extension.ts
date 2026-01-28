@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 import { workspace, ExtensionContext, window, commands, Uri, languages, CompletionItem, CompletionItemKind, SnippetString } from 'vscode';
 import {
     LanguageClient,
@@ -11,6 +12,113 @@ import { ExtensionCompletionProvider } from './extensionCompletions';
 
 let client: LanguageClient;
 let extensionProvider: ExtensionCompletionProvider;
+
+function findDuckCli(): string | null {
+    const config = workspace.getConfiguration('duckyscript');
+    const customPath = config.get<string>('cli.path', '');
+
+    if (customPath) {
+        if (fs.existsSync(customPath)) {
+            return customPath;
+        }
+        window.showWarningMessage(`Custom CLI path not found: ${customPath}`);
+        return null;
+    }
+
+    const isWindows = process.platform === 'win32';
+    const exeName = isWindows ? 'duck.exe' : 'duck';
+
+    const pathEnv = process.env.PATH || '';
+    const pathDirs = pathEnv.split(isWindows ? ';' : ':');
+
+    for (const dir of pathDirs) {
+        const candidate = path.join(dir, exeName);
+        if (fs.existsSync(candidate)) {
+            return candidate;
+        }
+    }
+
+    const homeDir = os.homedir();
+    const standardLocations = [
+        path.join(homeDir, '.duck', 'bin', exeName),
+        path.join(homeDir, '.cargo', 'bin', exeName),
+    ];
+
+    if (isWindows) {
+        standardLocations.push(
+            path.join('C:', 'Program Files', 'ducky-cli', 'bin', exeName),
+            path.join(process.env.LOCALAPPDATA || '', 'Programs', 'ducky-cli', exeName)
+        );
+    } else {
+        standardLocations.push(
+            path.join('/usr', 'local', 'bin', exeName),
+            path.join('/usr', 'bin', exeName)
+        );
+    }
+
+    for (const location of standardLocations) {
+        if (fs.existsSync(location)) {
+            return location;
+        }
+    }
+
+    return null;
+}
+
+function findLspServer(): string | null {
+    const config = workspace.getConfiguration('duckyscript');
+    const customPath = config.get<string>('lsp.path', '');
+    
+    // If custom path is specified, use it
+    if (customPath) {
+        if (fs.existsSync(customPath)) {
+            return customPath;
+        }
+        window.showWarningMessage(`Custom LSP path not found: ${customPath}`);
+        return null;
+    }
+    
+    const isWindows = process.platform === 'win32';
+    const exeName = isWindows ? 'ducky-lsp.exe' : 'ducky-lsp';
+    
+    // Check PATH environment variable
+    const pathEnv = process.env.PATH || '';
+    const pathDirs = pathEnv.split(isWindows ? ';' : ':');
+    
+    for (const dir of pathDirs) {
+        const candidate = path.join(dir, exeName);
+        if (fs.existsSync(candidate)) {
+            return candidate;
+        }
+    }
+    
+    // Check standard install locations
+    const homeDir = os.homedir();
+    const standardLocations = [
+        path.join(homeDir, '.duck', 'bin', exeName),
+        path.join(homeDir, '.cargo', 'bin', exeName),
+    ];
+    
+    if (isWindows) {
+        standardLocations.push(
+            path.join('C:', 'Program Files', 'ducky-lsp', 'bin', exeName),
+            path.join(process.env.LOCALAPPDATA || '', 'Programs', 'ducky-lsp', exeName)
+        );
+    } else {
+        standardLocations.push(
+            path.join('/usr', 'local', 'bin', exeName),
+            path.join('/usr', 'bin', exeName)
+        );
+    }
+    
+    for (const location of standardLocations) {
+        if (fs.existsSync(location)) {
+            return location;
+        }
+    }
+    
+    return null;
+}
 
 export function activate(context: ExtensionContext) {
     // Get configuration
@@ -72,12 +180,21 @@ export function activate(context: ExtensionContext) {
     
     context.subscriptions.push(extensionCompletions);
     
-    // Path to LSP server binary
-    const serverPath = path.join(context.extensionPath, '..', 'target', 'release', 'ducky-lsp.exe');
+    // Find LSP server binary
+    const serverPath = findLspServer();
     
-    // Check if server exists
-    if (!fs.existsSync(serverPath)) {
-        window.showErrorMessage(`DuckyScript LSP server not found at: ${serverPath}\nRun: cargo build --release`);
+    if (!serverPath) {
+        window.showErrorMessage(
+            'DuckyScript LSP server not found. Please install it or configure the path in settings.',
+            'Install Instructions',
+            'Configure Path'
+        ).then(selection => {
+            if (selection === 'Install Instructions') {
+                commands.executeCommand('vscode.open', Uri.parse('https://github.com/Greenstorm5417/duck-tools#installation'));
+            } else if (selection === 'Configure Path') {
+                commands.executeCommand('workbench.action.openSettings', 'duckyscript.lsp.path');
+            }
+        });
         return;
     }
 
@@ -183,10 +300,20 @@ export function activate(context: ExtensionContext) {
         }
 
         const filePath = document.uri.fsPath;
-        const compilerPath = path.join(context.extensionPath, '..', 'target', 'release', 'ducky-parse.exe');
-        
-        if (!fs.existsSync(compilerPath)) {
-            window.showErrorMessage(`Compiler not found: ${compilerPath}`);
+        const duckCliPath = findDuckCli();
+
+        if (!duckCliPath) {
+            window.showErrorMessage(
+                'Duck CLI not found. Please install it or configure the path in settings.',
+                'Install Instructions',
+                'Configure Path'
+            ).then(selection => {
+                if (selection === 'Install Instructions') {
+                    commands.executeCommand('vscode.open', Uri.parse('https://github.com/Greenstorm5417/duck-tools#installation'));
+                } else if (selection === 'Configure Path') {
+                    commands.executeCommand('workbench.action.openSettings', 'duckyscript.cli.path');
+                }
+            });
             return;
         }
 
@@ -213,16 +340,16 @@ export function activate(context: ExtensionContext) {
         if (terminalName.includes('powershell') || terminalName.includes('pwsh') || 
             (platform === 'win32' && !terminalName.includes('bash') && !terminalName.includes('cmd'))) {
             // PowerShell (default on Windows): Use call operator & for quoted paths
-            command = `& "${compilerPath}" "${filePath}"`;
+            command = `& "${duckCliPath}" build -i "${filePath}"`;
         } else if (terminalName.includes('cmd') || terminalName.includes('command prompt')) {
             // CMD: Direct execution with quotes
-            command = `"${compilerPath}" "${filePath}"`;
+            command = `"${duckCliPath}" build -i "${filePath}"`;
         } else if (terminalName.includes('bash') || terminalName.includes('zsh') || terminalName.includes('sh') || platform !== 'win32') {
             // Bash/Zsh/Unix shells: Direct execution with quotes
-            command = `"${compilerPath}" "${filePath}"`;
+            command = `"${duckCliPath}" build -i "${filePath}"`;
         } else {
             // Default: Try PowerShell syntax (most common on Windows)
-            command = `& "${compilerPath}" "${filePath}"`;
+            command = `& "${duckCliPath}" build -i "${filePath}"`;
         }
         
         terminal.sendText(command);
