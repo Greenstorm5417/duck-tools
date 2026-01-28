@@ -1,9 +1,9 @@
 {
   "name": "duckyscript-lsp",
-  "displayName": "DuckyScript Language Support",
+  "displayName": "Duck Tools: DuckyScript",
   "description": "DuckyScript 3.0 language support with LSP",
   "version": "0.1.0",
-  "publisher": "Greenstorm5417",
+  "publisher": "Greenstorm",
   "repository": {
     "type": "git",
     "url": "https://github.com/Greenstorm5417/duck-tools"
@@ -12,6 +12,7 @@
     "vscode": "^1.108.0"
   },
   "categories": ["Programming Languages"],
+  "icon": "images/duck-icon.ico",
   "main": "./out/extension.js",
   "activationEvents": ["onLanguage:duckyscript"],
   "contributes": {

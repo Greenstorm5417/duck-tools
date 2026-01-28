@@ -36,12 +36,6 @@ jobs:
       - name: Install vsce/ovsx
         run: npm install -g @vscode/vsce ovsx
 
-      - name: Publish to VS Code Marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: vsce publish -p "$VSCE_PAT"
-        working-directory: vscode-extension
-
       - name: Publish to Open VSX
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}

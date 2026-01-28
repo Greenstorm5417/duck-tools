@@ -4,6 +4,11 @@
   <img src="duck-icon.svg" alt="Duck Tools Logo" width="200" height="200">
 </p>
 
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code%20Marketplace-Install-blue)](https://marketplace.visualstudio.com/items?itemName=Greenstorm.duckyscript-lsp)
+[![Open VSX Registry](https://img.shields.io/badge/Open%20VSX-Install-blue)](https://open-vsx.org/extension/Greenstorm/duckyscript-lsp)
+[![GitHub stars](https://img.shields.io/github/stars/Greenstorm5417/duck-tools?style=flat)](https://github.com/Greenstorm5417/duck-tools/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/Greenstorm5417/duck-tools?style=flat)](https://github.com/Greenstorm5417/duck-tools/issues)
+
 Duck Tools is a lightweight, unofficial toolchain for working with **DuckyScript**, including a fast CLI compiler and editor tooling.
 
 It aims to be simple, predictable, and easy to integrate into existing workflows.
