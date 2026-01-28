@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "ducky-cli"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -259,7 +259,7 @@ dependencies = [
 
 [[package]]
 name = "ducky-core"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "hex",
  "lazy_static",
@@ -272,7 +272,7 @@ dependencies = [
 
 [[package]]
 name = "ducky-fmt"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "serde",
@@ -281,7 +281,7 @@ dependencies = [
 
 [[package]]
 name = "ducky-lint"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "ducky-core",
@@ -292,7 +292,7 @@ dependencies = [
 
 [[package]]
 name = "ducky-lsp"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "dashmap 6.1.0",
  "ducky-core",
