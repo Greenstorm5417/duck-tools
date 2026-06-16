@@ -22,6 +22,12 @@ pub struct ParserState {
     pub requires_lang_pack: bool,
 }
 
+impl Default for ParserState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ParserState {
     pub fn new() -> Self {
         ParserState {
@@ -52,10 +58,16 @@ impl ParserState {
                 self.var_values[addr] = value;
                 Ok(addr)
             } else {
-                Err(CompilerError::UnknownVariable { line: 0, name: name.to_string() })
+                Err(CompilerError::UnknownVariable {
+                    line: 0,
+                    name: name.to_string(),
+                })
             }
         } else {
-            Err(CompilerError::UnknownVariable { line: 0, name: name.to_string() })
+            Err(CompilerError::UnknownVariable {
+                line: 0,
+                name: name.to_string(),
+            })
         }
     }
 
@@ -101,7 +113,10 @@ impl ParserState {
 
     pub fn create_label(&mut self, label: &str, address: usize) -> CompilerResult<()> {
         if self.label_exists(label) {
-            return Err(CompilerError::DuplicateDefinition { line: 0, name: label.to_string() });
+            return Err(CompilerError::DuplicateDefinition {
+                line: 0,
+                name: label.to_string(),
+            });
         }
         self.label_map.insert(label.to_string(), address);
         Ok(())
@@ -115,7 +130,10 @@ impl ParserState {
     }
 
     pub fn current_register(&self) -> String {
-        format!("$__r{}", self.total_eval_registers - self.free_eval_registers)
+        format!(
+            "$__r{}",
+            self.total_eval_registers - self.free_eval_registers
+        )
     }
 }
 

@@ -1,16 +1,16 @@
+use ducky_core::lexer::{TokenType, tokenize_line};
 use tower_lsp::lsp_types::*;
-use ducky_core::lexer::{tokenize_line, TokenType};
 
 /// Generate folding ranges for code blocks
 pub fn get_folding_ranges(content: &str) -> Vec<FoldingRange> {
     let mut ranges = Vec::new();
     let lines: Vec<&str> = content.lines().collect();
-    
+
     let mut i = 0;
     while i < lines.len() {
         let line = lines[i];
         let token_type = tokenize_line(line);
-        
+
         match token_type {
             TokenType::Function => {
                 if let Some(end) = find_matching_end(&lines, i, TokenType::EndFunction) {
@@ -118,18 +118,13 @@ pub fn get_folding_ranges(content: &str) -> Vec<FoldingRange> {
             }
             _ => {}
         }
-        
+
         i += 1;
     }
-    
+
     ranges
 }
 
 fn find_matching_end(lines: &[&str], start: usize, end_type: TokenType) -> Option<usize> {
-    for i in (start + 1)..lines.len() {
-        if tokenize_line(lines[i]) == end_type {
-            return Some(i);
-        }
-    }
-    None
+    ((start + 1)..lines.len()).find(|&i| tokenize_line(lines[i]) == end_type)
 }

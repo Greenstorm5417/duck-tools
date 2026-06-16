@@ -4,114 +4,130 @@ use thiserror::Error;
 pub enum CompilerError {
     // Syntax Errors (E001-E099)
     #[error("Syntax error at line {line}: {message}")]
-    SyntaxError { 
-        line: usize, 
+    SyntaxError {
+        line: usize,
         message: String,
         column: Option<usize>,
         length: Option<usize>,
         suggestion: Option<String>,
     },
-    
+
     #[error("Unknown command: {command}")]
     UnknownCommand { line: usize, command: String },
-    
+
     #[error("Invalid expression: {message}")]
     InvalidExpression { line: usize, message: String },
-    
+
     #[error("Empty expression")]
     EmptyExpression { line: usize },
-    
+
     #[error("Unexpected symbol: {symbol}")]
     UnexpectedSymbol { line: usize, symbol: String },
-    
+
     // Block Structure Errors (E100-E199)
     #[error("Missing END_{block_type}")]
     MissingEnd { line: usize, block_type: String },
-    
+
     #[error("Unexpected END_{block_type} without matching {block_type}")]
     UnexpectedEnd { line: usize, block_type: String },
-    
+
     #[error("Mismatched block end: expected END_{expected}, found END_{found}")]
-    MismatchedBlockEnd { line: usize, expected: String, found: String },
-    
+    MismatchedBlockEnd {
+        line: usize,
+        expected: String,
+        found: String,
+    },
+
     #[error("Unclosed block: {block_type} started at line {start_line}")]
-    UnclosedBlock { line: usize, block_type: String, start_line: usize },
-    
+    UnclosedBlock {
+        line: usize,
+        block_type: String,
+        start_line: usize,
+    },
+
     // Variable/Function Errors (E200-E299)
     #[error("Unknown variable: {name}")]
     UnknownVariable { line: usize, name: String },
-    
+
     #[error("Variable redefinition: {name}")]
     VariableRedefinition { line: usize, name: String },
-    
+
     #[error("Invalid variable name: {name}")]
     InvalidVariableName { line: usize, name: String },
-    
+
     #[error("Undefined function: {name}")]
     UndefinedFunction { line: usize, name: String },
-    
+
     #[error("Function redefinition: {name}")]
     FunctionRedefinition { line: usize, name: String },
-    
+
     #[error("RETURN statement outside function")]
     ReturnOutsideFunction { line: usize },
-    
+
     // Label/Definition Errors (E300-E399)
     #[error("Unknown label: {label}")]
     UnknownLabel { line: usize, label: String },
-    
+
     #[error("Duplicate definition: {name}")]
     DuplicateDefinition { line: usize, name: String },
-    
+
     // Expression/Operator Errors (E400-E499)
     #[error("Division by zero")]
     DivisionByZero { line: usize },
-    
+
     #[error("Type mismatch: expected {expected}, got {got}")]
-    TypeMismatch { line: usize, expected: String, got: String },
-    
+    TypeMismatch {
+        line: usize,
+        expected: String,
+        got: String,
+    },
+
     #[error("Invalid operator: {operator}")]
     InvalidOperator { line: usize, operator: String },
-    
+
     #[error("Mismatched parentheses: {left} '(' vs {right} ')')")]
-    MismatchedParentheses { line: usize, left: usize, right: usize },
-    
+    MismatchedParentheses {
+        line: usize,
+        left: usize,
+        right: usize,
+    },
+
     // Command Argument Errors (E500-E599)
     #[error("Invalid delay value: {value}")]
     InvalidDelay { line: usize, value: String },
-    
+
     #[error("Invalid repeat count: {value}")]
     InvalidRepeat { line: usize, value: String },
-    
+
     #[error("Invalid key code: {code}")]
     InvalidKeyCode { line: usize, code: String },
-    
+
     #[error("Invalid modifier: {modifier}")]
     InvalidModifier { line: usize, modifier: String },
-    
+
     #[error("Invalid hex value: {value}")]
     InvalidHex { line: usize, value: String },
-    
+
     // Preprocessor Errors (E600-E699)
     #[error("Unclosed IF_DEFINED block")]
     UnclosedIfDef { line: usize },
-    
+
     #[error("DEFINE redefinition: {name}")]
     DefineRedefinition { line: usize, name: String },
-    
+
     #[error("Circular DEFINE reference: {name}")]
     CircularDefine { line: usize, name: String },
-    
+
     // System Errors (E700-E799)
     #[error("Payload too large: {size} bytes (max 16384)")]
     PayloadTooLarge { size: usize },
-    
+
     #[error("Key not found in language file: {key}")]
     KeyNotFound { line: usize, key: String },
-    
+
     #[error("IO error: {message}")]
     IoError { message: String },
-    
+
     #[error("Incompatible DuckyScript 1.0 syntax")]
     IncompatibleDS1 { line: usize },
 }
@@ -155,7 +171,7 @@ impl CompilerError {
             CompilerError::IoError { .. } => None,
         }
     }
-    
+
     /// Get the column number for errors that support it
     pub fn column(&self) -> Option<usize> {
         match self {
@@ -163,7 +179,7 @@ impl CompilerError {
             _ => None,
         }
     }
-    
+
     /// Get the error length for errors that support it
     pub fn length(&self) -> Option<usize> {
         match self {
@@ -171,7 +187,7 @@ impl CompilerError {
             _ => None,
         }
     }
-    
+
     /// Get the suggestion for fixing the error
     pub fn suggestion(&self) -> Option<&str> {
         match self {
@@ -179,7 +195,7 @@ impl CompilerError {
             _ => None,
         }
     }
-    
+
     /// Get error code for LSP integration
     pub fn code(&self) -> &'static str {
         match self {
@@ -223,23 +239,32 @@ impl CompilerError {
 #[derive(Error, Debug, Clone)]
 pub enum CompilerWarning {
     #[error("DEFINE {label} modifies this line replacing {old} with {new}")]
-    DefineReplacement { line: usize, label: String, old: String, new: String },
-    
+    DefineReplacement {
+        line: usize,
+        label: String,
+        old: String,
+        new: String,
+    },
+
     #[error("Unused variable: {name}")]
     UnusedVariable { line: usize, name: String },
-    
+
     #[error("Unused function: {name}")]
     UnusedFunction { line: usize, name: String },
-    
+
     #[error("Deprecated syntax: use {new} instead of {old}")]
-    DeprecatedSyntax { line: usize, old: String, new: String },
-    
+    DeprecatedSyntax {
+        line: usize,
+        old: String,
+        new: String,
+    },
+
     #[error("Suspicious delay value: {delay}ms (very long)")]
     SuspiciousDelay { line: usize, delay: u32 },
-    
+
     #[error("Empty block: {block_type}")]
     EmptyBlock { line: usize, block_type: String },
-    
+
     #[error("Unreachable code after RETURN")]
     UnreachableCode { line: usize },
 }
@@ -257,7 +282,7 @@ impl CompilerWarning {
             CompilerWarning::UnreachableCode { line } => *line,
         }
     }
-    
+
     /// Get warning code for LSP integration
     pub fn code(&self) -> &'static str {
         match self {
@@ -270,7 +295,7 @@ impl CompilerWarning {
             CompilerWarning::UnreachableCode { .. } => "W007",
         }
     }
-    
+
     /// Get the message for display
     pub fn message(&self) -> String {
         format!("{}", self)

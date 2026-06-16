@@ -17,7 +17,7 @@ pub fn compiler_to_diagnostics(compiler: &DuckyCompiler, _uri: &Url) -> Vec<Diag
         };
         let column = error.column().unwrap_or(0) as u32;
         let length = error.length().unwrap_or(0) as u32;
-        
+
         let diagnostic = Diagnostic {
             range: Range {
                 start: Position {
@@ -26,7 +26,11 @@ pub fn compiler_to_diagnostics(compiler: &DuckyCompiler, _uri: &Url) -> Vec<Diag
                 },
                 end: Position {
                     line,
-                    character: if length > 0 { column + length } else { u32::MAX },
+                    character: if length > 0 {
+                        column + length
+                    } else {
+                        u32::MAX
+                    },
                 },
             },
             severity: Some(DiagnosticSeverity::ERROR),
@@ -46,10 +50,7 @@ pub fn compiler_to_diagnostics(compiler: &DuckyCompiler, _uri: &Url) -> Vec<Diag
         let line = warning.line().saturating_sub(1) as u32; // Convert to 0-indexed
         let diagnostic = Diagnostic {
             range: Range {
-                start: Position {
-                    line,
-                    character: 0,
-                },
+                start: Position { line, character: 0 },
                 end: Position {
                     line,
                     character: u32::MAX,

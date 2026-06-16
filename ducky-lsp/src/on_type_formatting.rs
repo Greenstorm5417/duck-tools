@@ -1,5 +1,5 @@
+use ducky_core::lexer::{TokenType, tokenize_line};
 use tower_lsp::lsp_types::*;
-use ducky_core::lexer::{tokenize_line, TokenType};
 
 /// Get formatting edits when typing a trigger character
 pub fn get_on_type_formatting(
@@ -10,31 +10,31 @@ pub fn get_on_type_formatting(
 ) -> Vec<TextEdit> {
     let mut edits = Vec::new();
     let lines: Vec<&str> = content.lines().collect();
-    
+
     // Only handle newline character
     if ch != "\n" {
         return edits;
     }
-    
+
     // Get the previous line (the one that was just completed)
     if position.line == 0 {
         return edits;
     }
-    
+
     let prev_line_idx = (position.line - 1) as usize;
     if let Some(prev_line) = lines.get(prev_line_idx) {
         let trimmed = prev_line.trim();
         let token_type = tokenize_line(trimmed);
-        
+
         let indent_char = if options.insert_spaces {
             " ".repeat(options.tab_size as usize)
         } else {
             "\t".to_string()
         };
-        
+
         // Calculate current indent level
         let current_indent = get_indent_level(prev_line, &indent_char);
-        
+
         // Auto-complete block structures
         match token_type {
             TokenType::If | TokenType::ElseIf | TokenType::Else => {
@@ -42,7 +42,7 @@ pub fn get_on_type_formatting(
                 if !has_matching_end(&lines, prev_line_idx, TokenType::If, TokenType::EndIf) {
                     let new_indent = indent_char.repeat(current_indent);
                     let inner_indent = indent_char.repeat(current_indent + 1);
-                    
+
                     edits.push(TextEdit {
                         range: Range {
                             start: position,
@@ -67,7 +67,7 @@ pub fn get_on_type_formatting(
                 if !has_matching_end(&lines, prev_line_idx, TokenType::While, TokenType::EndWhile) {
                     let new_indent = indent_char.repeat(current_indent);
                     let inner_indent = indent_char.repeat(current_indent + 1);
-                    
+
                     edits.push(TextEdit {
                         range: Range {
                             start: position,
@@ -88,10 +88,15 @@ pub fn get_on_type_formatting(
             }
             TokenType::Function => {
                 // Add END_FUNCTION if not present
-                if !has_matching_end(&lines, prev_line_idx, TokenType::Function, TokenType::EndFunction) {
+                if !has_matching_end(
+                    &lines,
+                    prev_line_idx,
+                    TokenType::Function,
+                    TokenType::EndFunction,
+                ) {
                     let new_indent = indent_char.repeat(current_indent);
                     let inner_indent = indent_char.repeat(current_indent + 1);
-                    
+
                     edits.push(TextEdit {
                         range: Range {
                             start: position,
@@ -114,7 +119,7 @@ pub fn get_on_type_formatting(
                 // Add END_STRING if not present
                 let new_indent = indent_char.repeat(current_indent);
                 let inner_indent = indent_char.repeat(current_indent + 1);
-                
+
                 edits.push(TextEdit {
                     range: Range {
                         start: position,
@@ -127,7 +132,7 @@ pub fn get_on_type_formatting(
                 // Add END_REM if not present
                 let new_indent = indent_char.repeat(current_indent);
                 let inner_indent = indent_char.repeat(current_indent + 1);
-                
+
                 edits.push(TextEdit {
                     range: Range {
                         start: position,
@@ -151,7 +156,7 @@ pub fn get_on_type_formatting(
             }
         }
     }
-    
+
     edits
 }
 
@@ -159,7 +164,7 @@ pub fn get_on_type_formatting(
 fn get_indent_level(line: &str, indent_char: &str) -> usize {
     let mut level = 0;
     let mut chars = line.chars();
-    
+
     while let Some(ch) = chars.next() {
         if ch == '\t' {
             level += 1;
@@ -167,18 +172,18 @@ fn get_indent_level(line: &str, indent_char: &str) -> usize {
             // Count spaces based on indent_char length
             let spaces_per_indent = indent_char.len();
             let mut space_count = 1;
-            
+
             while let Some(' ') = chars.next() {
                 space_count += 1;
             }
-            
+
             level += space_count / spaces_per_indent;
             break;
         } else {
             break;
         }
     }
-    
+
     level
 }
 
@@ -190,11 +195,11 @@ fn has_matching_end(
     end_token: TokenType,
 ) -> bool {
     let mut depth = 1;
-    
+
     for line in lines.iter().skip(start_idx + 1) {
         let trimmed = line.trim();
         let token_type = tokenize_line(trimmed);
-        
+
         if token_type == start_token {
             depth += 1;
         } else if token_type == end_token {
@@ -204,6 +209,6 @@ fn has_matching_end(
             }
         }
     }
-    
+
     false
 }

@@ -3,7 +3,7 @@ use tower_lsp::lsp_types::*;
 /// Get all DuckyScript keyword completions
 pub fn get_keyword_completions() -> Vec<CompletionItem> {
     let mut items = Vec::new();
-    
+
     // String commands
     for (label, detail) in &[
         ("STRING", "Type a string of characters"),
@@ -14,7 +14,7 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Timing commands
     for (label, detail) in &[
         ("DELAY", "Wait for specified milliseconds"),
@@ -25,7 +25,7 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Key commands
     for (label, detail) in &[
         ("ENTER", "Press ENTER key"),
@@ -35,7 +35,7 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Control flow
     for (label, detail) in &[
         ("IF", "Conditional statement"),
@@ -47,7 +47,7 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Functions
     for (label, detail) in &[
         ("FUNCTION", "Define a function"),
@@ -56,7 +56,7 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Variables
     for (label, detail) in &[
         ("VAR", "Declare a variable"),
@@ -65,18 +65,21 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Preprocessor
     for (label, detail) in &[
         ("DEFINE", "Define a preprocessor constant"),
         ("IF_DEFINED_TRUE", "Conditional compilation if defined"),
-        ("IF_NOT_DEFINED_TRUE", "Conditional compilation if not defined"),
+        (
+            "IF_NOT_DEFINED_TRUE",
+            "Conditional compilation if not defined",
+        ),
         ("ELSE_DEFINED", "Preprocessor else"),
         ("END_IF_DEFINED", "End preprocessor conditional"),
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // System commands
     for (label, detail) in &[
         ("ATTACKMODE", "Configure USB device mode"),
@@ -86,7 +89,7 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Modifier commands
     for (label, detail) in &[
         ("MOD_KEY_DOWN", "Press modifier and key"),
@@ -98,11 +101,17 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Random generators
     for (label, detail) in &[
-        ("RANDOM_LOWERCASE_LETTER", "Generate random lowercase letter"),
-        ("RANDOM_UPPERCASE_LETTER", "Generate random uppercase letter"),
+        (
+            "RANDOM_LOWERCASE_LETTER",
+            "Generate random lowercase letter",
+        ),
+        (
+            "RANDOM_UPPERCASE_LETTER",
+            "Generate random uppercase letter",
+        ),
         ("RANDOM_NUMBER", "Generate random digit (0-9)"),
         ("RANDOM_LETTER", "Generate random letter"),
         ("RANDOM_SPECIAL", "Generate random special character"),
@@ -110,7 +119,7 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Blocks
     for (label, detail) in &[
         ("EXTENSION", "Define payload extension"),
@@ -122,7 +131,7 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Comments
     for (label, detail) in &[
         ("REM", "Comment line"),
@@ -131,22 +140,25 @@ pub fn get_keyword_completions() -> Vec<CompletionItem> {
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     // Debug
     for (label, detail) in &[
         ("DEBUGGER_BREAKPOINT", "Set debugger breakpoint"),
-        ("INJECT_BREAKPOINT_LINE_NUMBER", "Inject breakpoint line number"),
+        (
+            "INJECT_BREAKPOINT_LINE_NUMBER",
+            "Inject breakpoint line number",
+        ),
     ] {
         items.push(create_keyword_item(label, detail));
     }
-    
+
     items
 }
 
 /// Get modifier key completions
 pub fn get_modifier_completions() -> Vec<CompletionItem> {
     let mut items = Vec::new();
-    
+
     for (label, detail) in &[
         ("CTRL", "Control modifier key"),
         ("CONTROL", "Control modifier key (alternative)"),
@@ -164,14 +176,14 @@ pub fn get_modifier_completions() -> Vec<CompletionItem> {
             ..Default::default()
         });
     }
-    
+
     items
 }
 
 /// Get special key completions
 pub fn get_special_key_completions() -> Vec<CompletionItem> {
     let mut items = Vec::new();
-    
+
     // Function keys
     for i in 1..=12 {
         items.push(CompletionItem {
@@ -181,7 +193,7 @@ pub fn get_special_key_completions() -> Vec<CompletionItem> {
             ..Default::default()
         });
     }
-    
+
     // Special keys
     for (label, detail) in &[
         ("ESCAPE", "Escape key"),
@@ -218,7 +230,7 @@ pub fn get_special_key_completions() -> Vec<CompletionItem> {
             ..Default::default()
         });
     }
-    
+
     // Numpad keys
     for (label, detail) in &[
         ("NUM_LOCK", "Num Lock key"),
@@ -247,14 +259,14 @@ pub fn get_special_key_completions() -> Vec<CompletionItem> {
             ..Default::default()
         });
     }
-    
+
     items
 }
 
 /// Get reserved variable completions
 pub fn get_reserved_variable_completions() -> Vec<CompletionItem> {
     let mut items = Vec::new();
-    
+
     for (label, detail) in &[
         ("$_HOST_OS", "Detected host operating system"),
         ("$_CAPSLOCK_ON", "CAPS LOCK state (TRUE/FALSE)"),
@@ -275,7 +287,7 @@ pub fn get_reserved_variable_completions() -> Vec<CompletionItem> {
             ..Default::default()
         });
     }
-    
+
     items
 }
 

@@ -20,7 +20,8 @@ fn compile_and_compare(test_name: &str) {
         .unwrap_or_else(|e| panic!("Failed to read {}: {}", official_path.display(), e));
 
     let mut compiler = DuckyCompiler::new(None);
-    let compiled_bytes = compiler.compile(&source)
+    let compiled_bytes = compiler
+        .compile(&source)
         .unwrap_or_else(|e| panic!("Compilation failed for {}: {}", test_name, e));
 
     let rust_hash = compute_sha256(&compiled_bytes);
@@ -36,12 +37,9 @@ fn compile_and_compare(test_name: &str) {
     );
 
     assert_eq!(
-        rust_hash,
-        official_hash,
+        rust_hash, official_hash,
         "{}: Hash mismatch\n  Rust:     {}\n  Official: {}",
-        test_name,
-        rust_hash,
-        official_hash
+        test_name, rust_hash, official_hash
     );
 
     println!("✓ {} passed (SHA256: {})", test_name, rust_hash);
@@ -84,11 +82,13 @@ fn test_test7_parity() {
 
 #[test]
 fn test_all_parity() {
-    let tests = ["test1", "test2", "test3", "test4", "test5", "test6", "test7"];
-    
+    let tests = [
+        "test1", "test2", "test3", "test4", "test5", "test6", "test7",
+    ];
+
     for test_name in &tests {
         compile_and_compare(test_name);
     }
-    
+
     println!("\n✓ All {} tests passed!", tests.len());
 }

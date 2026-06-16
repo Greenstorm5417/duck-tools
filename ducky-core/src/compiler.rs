@@ -3,7 +3,7 @@ use crate::encoder::*;
 use crate::errors::{CompilerError, CompilerResult, CompilerWarning};
 use crate::language::KeyboardLayout;
 use crate::lexer::*;
-use crate::parser::{split_syntax_line, ParserState};
+use crate::parser::{ParserState, split_syntax_line};
 use crate::preprocessor::Preprocessor;
 use std::collections::HashMap;
 
@@ -68,10 +68,10 @@ impl DuckyCompiler {
 
         let mut preprocessor = Preprocessor::new();
         preprocessor.gather_defines(&lines)?;
-        
+
         let lines = preprocessor.parse_ifdefs(lines)?;
         let lines = preprocessor.process(lines);
-        
+
         self.warnings.extend(preprocessor.warnings);
 
         for (index, line) in lines.iter().enumerate() {
@@ -99,7 +99,7 @@ impl DuckyCompiler {
             if let Some(delay_bytes) = self.check_delay() {
                 append_hex_string_array(&mut self.output_buffer, delay_bytes)?;
             }
-            
+
             self.state.free_eval_registers = self.state.total_eval_registers;
             self.previous_line = line.clone();
 
@@ -120,7 +120,7 @@ impl DuckyCompiler {
     }
 
     fn sanitize_input(&self, input: &str) -> String {
-        input.replace('\r', "").replace('"', "\"")
+        input.replace('\r', "")
     }
 
     fn strip_block_indentation(&self, line: &str) -> String {
@@ -177,11 +177,11 @@ impl DuckyCompiler {
             for ch in content.chars() {
                 self.inject_character(&ch.to_string())?;
             }
-            
+
             if self.inside_stringln_block {
                 self.inject_character("ENTER")?;
             }
-            
+
             return Ok(());
         }
 
@@ -207,26 +207,31 @@ impl DuckyCompiler {
                 });
                 Ok(())
             }
-            TokenType::Define | TokenType::IfDefined | TokenType::IfNotDefined
-            | TokenType::ElseDefined | TokenType::EndIfDefined => Ok(()),
-            
+            TokenType::Define
+            | TokenType::IfDefined
+            | TokenType::IfNotDefined
+            | TokenType::ElseDefined
+            | TokenType::EndIfDefined => Ok(()),
+
             TokenType::Delay => self.handle_delay(line),
             TokenType::DelayVar => self.handle_delay_var(line),
             TokenType::DefaultDelay => self.handle_default_delay(line),
             TokenType::StringDelay => self.handle_string_delay(line),
-            
+
             TokenType::String => self.handle_string(line),
             TokenType::StringLn => self.handle_stringln(line),
             TokenType::StringBlock => {
                 self.inside_string_block = true;
                 self.preserve_leading_space = line.to_ascii_uppercase().contains("PYTHON");
-                self.string_block_indentation_level = self.compute_string_block_indentation_level(line);
+                self.string_block_indentation_level =
+                    self.compute_string_block_indentation_level(line);
                 Ok(())
             }
             TokenType::StringLnBlock => {
                 self.inside_stringln_block = true;
                 self.preserve_leading_space = false;
-                self.string_block_indentation_level = self.compute_string_block_indentation_level(line);
+                self.string_block_indentation_level =
+                    self.compute_string_block_indentation_level(line);
                 Ok(())
             }
             TokenType::EndString => {
@@ -236,27 +241,27 @@ impl DuckyCompiler {
                 self.preserve_leading_space = false;
                 Ok(())
             }
-            
+
             TokenType::If => self.handle_if(line, false),
             TokenType::ElseIf => self.handle_else_if(line),
             TokenType::Else => self.handle_else(line),
             TokenType::EndIf => self.handle_end_if(line, true),
-            
+
             TokenType::While => self.handle_while(line),
             TokenType::EndWhile => self.handle_end_while(line),
-            
+
             TokenType::Assignment | TokenType::Declaration => self.handle_assignment(line),
-            
+
             TokenType::Function => self.handle_function_def(line),
             TokenType::EndFunction => self.handle_end_function(line),
             TokenType::FunctionCall => self.handle_function_call(line),
             TokenType::Return => self.handle_return(line),
-            
+
             TokenType::Enter => self.handle_enter(line),
             TokenType::Repeat => self.handle_repeat(line),
             TokenType::Hold => self.handle_hold(line),
             TokenType::Release => self.handle_release(line),
-            
+
             TokenType::Inject => self.handle_inject(line),
             TokenType::InjectMod => self.handle_inject_mod(line),
             TokenType::InjectVar => self.handle_inject_var(line),
@@ -269,27 +274,29 @@ impl DuckyCompiler {
             TokenType::KeyUp => self.handle_key_up(line),
             TokenType::ModDown => self.handle_mod_down(line),
             TokenType::ModUp => self.handle_mod_up(line),
-            
+
             TokenType::Modifier => self.handle_modifier(line),
-            
+
             TokenType::Stage | TokenType::EndStage => Ok(()),
             TokenType::Extension | TokenType::EndExtension => Ok(()),
-            
+
             TokenType::ButtonDef => self.handle_button_def(line),
             TokenType::EndButtonDef => self.handle_end_button_def(line),
-            
+
             TokenType::Attackmode => self.handle_attackmode(line),
-            
+
             TokenType::RandomLowercaseLetter => self.handle_random_lowercase(line),
             TokenType::RandomUppercaseLetter => self.handle_random_uppercase(line),
             TokenType::RandomNumber => self.handle_random_number(line),
             TokenType::RandomLetter => self.handle_random_letter(line),
             TokenType::RandomSpecial => self.handle_random_special(line),
             TokenType::RandomChar => self.handle_random_char(line),
-            
+
             TokenType::Breakpoint => self.handle_breakpoint(line),
-            TokenType::InjectBreakpointLineNumber => self.handle_inject_breakpoint_line_number(line),
-            
+            TokenType::InjectBreakpointLineNumber => {
+                self.handle_inject_breakpoint_line_number(line)
+            }
+
             TokenType::Unknown => self.handle_unknown(line),
         }
     }
@@ -299,11 +306,11 @@ impl DuckyCompiler {
     }
 
     fn handle_delay(&mut self, line: &str) -> CompilerResult<()> {
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 2 {
             return Ok(());
         }
-        
+
         if let Ok(delay) = parts[1].parse::<u32>() {
             self.delay_override = true;
             let delay_bytes = build_delay_bytes(delay);
@@ -359,7 +366,7 @@ impl DuckyCompiler {
     }
 
     fn extract_single_hex_operand(&self, line: &str) -> String {
-        let mut parts = line.trim().split_whitespace();
+        let mut parts = line.split_whitespace();
         let _cmd = parts.next();
         let arg = parts.next().unwrap_or("0x00");
         let arg = arg.trim_start_matches("0x").trim_start_matches("0X");
@@ -368,7 +375,7 @@ impl DuckyCompiler {
     }
 
     fn extract_two_hex_operands_js_style(&self, line: &str) -> (String, String) {
-        let args = line.trim().splitn(2, ' ').nth(1).unwrap_or("");
+        let args = line.trim().split_once(' ').map(|x| x.1).unwrap_or("");
         let cleaned = args.replace("0x", "").replace("0X", "");
         let b1 = cleaned.get(0..2).unwrap_or("");
         let b2 = cleaned.get(2..4).unwrap_or("");
@@ -427,11 +434,11 @@ impl DuckyCompiler {
 
     fn handle_delay_var(&mut self, line: &str) -> CompilerResult<()> {
         self.mark_ds3();
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 2 {
             return Ok(());
         }
-        
+
         let var_name = parts[1];
         append_hex_string_array(&mut self.output_buffer, vec![hex_encode(0xE9E7)])?;
 
@@ -442,31 +449,36 @@ impl DuckyCompiler {
             if let Some(&val) = RESERVED_VARIABLES.get(var_name) {
                 append_hex_string_array(&mut self.output_buffer, vec![hex_encode(val)])?;
             } else {
-                return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var_name.to_string() });
+                return Err(CompilerError::UnknownVariable {
+                    line: self.current_line_index + 1,
+                    name: var_name.to_string(),
+                });
             }
         } else {
-            return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var_name.to_string() });
+            return Err(CompilerError::UnknownVariable {
+                line: self.current_line_index + 1,
+                name: var_name.to_string(),
+            });
         }
         Ok(())
     }
 
     fn handle_default_delay(&mut self, line: &str) -> CompilerResult<()> {
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
-        if parts.len() >= 2 {
-            if let Ok(delay) = parts[1].parse::<u32>() {
-                self.default_delay = delay;
-                self.delay_override = true;
-            }
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() >= 2
+            && let Ok(delay) = parts[1].parse::<u32>()
+        {
+            self.default_delay = delay;
+            self.delay_override = true;
         }
         Ok(())
     }
 
     fn handle_string_delay(&mut self, line: &str) -> CompilerResult<()> {
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
-        if parts.len() >= 2 {
-            if let Ok(_delay) = parts[1].parse::<u32>() {
-            }
-        }
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() >= 2
+            && let Ok(_delay) = parts[1].parse::<u32>()
+        {}
         Ok(())
     }
 
@@ -496,7 +508,7 @@ impl DuckyCompiler {
     fn handle_string(&mut self, line: &str) -> CompilerResult<()> {
         let args = self.get_args_from_line(line);
         let content = self.strip_inline_end_marker_string(args);
-        
+
         for ch in content.chars() {
             self.inject_character(&ch.to_string())?;
         }
@@ -506,7 +518,7 @@ impl DuckyCompiler {
     fn handle_stringln(&mut self, line: &str) -> CompilerResult<()> {
         let args = self.get_args_from_line(line);
         let content = self.strip_inline_end_marker_stringln(args);
-        
+
         for ch in content.chars() {
             self.inject_character(&ch.to_string())?;
         }
@@ -518,32 +530,50 @@ impl DuckyCompiler {
         if let Some(codes) = self.keyboard_layout.get_bytes_for_key(ch) {
             if codes.len() > 1 && codes.len() < 3 {
                 // Two-element format: [modifier, keycode]
-                append_hex_string_array(&mut self.output_buffer, vec![codes[0].clone(), codes[1].clone()])?;
+                append_hex_string_array(
+                    &mut self.output_buffer,
+                    vec![codes[0].clone(), codes[1].clone()],
+                )?;
             } else if codes.len() >= 3 {
                 // Three-element format: [modifier, unused, keycode]
                 let modifier = &codes[0];
                 let keycode = &codes[2];
-                
+
                 if keycode != "00" {
                     if modifier != "00" {
                         // Both modifier and keycode
-                        append_hex_string_array(&mut self.output_buffer, vec![keycode.clone(), modifier.clone()])?;
+                        append_hex_string_array(
+                            &mut self.output_buffer,
+                            vec![keycode.clone(), modifier.clone()],
+                        )?;
                     } else {
                         // Keycode only, add release
-                        append_hex_string_array(&mut self.output_buffer, vec![keycode.clone(), "00".to_string()])?;
+                        append_hex_string_array(
+                            &mut self.output_buffer,
+                            vec![keycode.clone(), "00".to_string()],
+                        )?;
                     }
                 } else {
                     // Modifier only: encode as [keycode=00, modifier]
-                    append_hex_string_array(&mut self.output_buffer, vec!["00".to_string(), modifier.clone()])?;
+                    append_hex_string_array(
+                        &mut self.output_buffer,
+                        vec!["00".to_string(), modifier.clone()],
+                    )?;
                 }
             } else if codes.len() == 1 {
                 // Single byte
-                append_hex_string_array(&mut self.output_buffer, vec![codes[0].clone(), "00".to_string()])?;
+                append_hex_string_array(
+                    &mut self.output_buffer,
+                    vec![codes[0].clone(), "00".to_string()],
+                )?;
             }
             Ok(())
         } else {
             // Key not found in keyboard layout
-            Err(CompilerError::KeyNotFound { line: self.current_line_index + 1, key: ch.to_string() })
+            Err(CompilerError::KeyNotFound {
+                line: self.current_line_index + 1,
+                key: ch.to_string(),
+            })
         }
     }
 
@@ -551,7 +581,7 @@ impl DuckyCompiler {
         self.mark_ds3();
         self.state.next_block_address += 1;
         self.state.current_block = self.state.next_block_address;
-        
+
         if !chain {
             self.awaiting_future_addr.push(Vec::new());
         }
@@ -579,7 +609,7 @@ impl DuckyCompiler {
                 rp_count += 1;
                 let mut temp = Vec::new();
                 self.state.next_register();
-                
+
                 if stack.len() >= 3 {
                     let var2 = stack.pop().unwrap();
                     let op = stack.pop().unwrap();
@@ -592,7 +622,9 @@ impl DuckyCompiler {
                     temp.push(var2);
                     temp.push(op);
                 } else if stack.is_empty() {
-                    return Err(CompilerError::EmptyExpression { line: self.current_line_index + 1 });
+                    return Err(CompilerError::EmptyExpression {
+                        line: self.current_line_index + 1,
+                    });
                 } else {
                     let var1 = stack.pop().unwrap();
                     let current_reg = self.state.current_register();
@@ -602,7 +634,7 @@ impl DuckyCompiler {
                     temp.push(var1);
                     temp.push("0000".to_string());
                 }
-                
+
                 self.state.free_eval_registers = self.state.free_eval_registers.saturating_sub(1);
                 output_stack.push(temp);
             } else {
@@ -621,23 +653,29 @@ impl DuckyCompiler {
         if stack.len() == 1 {
             output_stack.push(vec!["IF".to_string(), stack[0].clone()]);
         } else {
-            output_stack.push(vec!["IF".to_string(), format!("$__r{}", self.state.total_eval_registers.saturating_sub(1))]);
+            output_stack.push(vec![
+                "IF".to_string(),
+                format!("$__r{}", self.state.total_eval_registers.saturating_sub(1)),
+            ]);
         }
 
         let encoded = self.encode_expression_stack(&output_stack)?;
         let block_hex = dec_to_hex(self.state.current_block as usize);
         let mut final_encoded = encoded;
         final_encoded.push(block_hex);
-        
+
         append_hex_string_array(&mut self.output_buffer, final_encoded)?;
         self.state.block_stack.push(self.state.current_block);
-        
+
         Ok(())
     }
 
-    fn encode_expression_stack(&mut self, output_stack: &[Vec<String>]) -> CompilerResult<Vec<String>> {
+    fn encode_expression_stack(
+        &mut self,
+        output_stack: &[Vec<String>],
+    ) -> CompilerResult<Vec<String>> {
         let mut result = Vec::new();
-        
+
         for expr in output_stack {
             for word in expr {
                 if word == "0000" {
@@ -689,23 +727,39 @@ impl DuckyCompiler {
                 }
             }
         }
-        
+
         Ok(result)
     }
 
     fn handle_else_if(&mut self, line: &str) -> CompilerResult<()> {
         self.mark_ds3();
-        append_hex_string_array(&mut self.output_buffer, vec!["F8".to_string(), "F8".to_string(), "XX".to_string(), "XX".to_string()])?;
+        append_hex_string_array(
+            &mut self.output_buffer,
+            vec![
+                "F8".to_string(),
+                "F8".to_string(),
+                "XX".to_string(),
+                "XX".to_string(),
+            ],
+        )?;
         self.mark_future_address();
         self.handle_end_if("END_IF", false)?;
-        
+
         let converted = line.replace("ELSE IF", "IF");
         self.handle_if(&converted, true)
     }
 
     fn handle_else(&mut self, _line: &str) -> CompilerResult<()> {
         self.mark_ds3();
-        append_hex_string_array(&mut self.output_buffer, vec!["F8".to_string(), "F8".to_string(), "XX".to_string(), "XX".to_string()])?;
+        append_hex_string_array(
+            &mut self.output_buffer,
+            vec![
+                "F8".to_string(),
+                "F8".to_string(),
+                "XX".to_string(),
+                "XX".to_string(),
+            ],
+        )?;
         self.mark_future_address();
         self.handle_end_if("END_IF", false)?;
         self.handle_if("IF TRUE THEN", true)
@@ -725,9 +779,12 @@ impl DuckyCompiler {
         self.mark_ds3();
         if let Some(block) = self.state.block_stack.pop() {
             let block_hex = dec_to_hex(block as usize);
-            append_hex_string_array(&mut self.output_buffer, vec!["1F".to_string(), "F4".to_string(), block_hex])?;
+            append_hex_string_array(
+                &mut self.output_buffer,
+                vec!["1F".to_string(), "F4".to_string(), block_hex],
+            )?;
         }
-        
+
         if close_chain {
             self.close_if_chain()?;
         }
@@ -765,7 +822,10 @@ impl DuckyCompiler {
             let label = format!("generated_while_{}", block);
             if let Some(&addr) = self.state.label_map.get(&label) {
                 let hex_addr = dec_to_hex(addr / 2);
-                append_hex_string_array(&mut self.output_buffer, vec!["F8".to_string(), "F8".to_string(), hex_addr])?;
+                append_hex_string_array(
+                    &mut self.output_buffer,
+                    vec!["F8".to_string(), "F8".to_string(), hex_addr],
+                )?;
             }
         }
         self.handle_end_if("END_IF", true)
@@ -773,7 +833,7 @@ impl DuckyCompiler {
 
     fn handle_assignment(&mut self, line: &str) -> CompilerResult<()> {
         self.mark_ds3();
-        
+
         let lexemes = split_syntax_line(line);
         let mut stack: Vec<String> = Vec::new();
         let mut output_stack: Vec<Vec<String>> = Vec::new();
@@ -823,9 +883,12 @@ impl DuckyCompiler {
                 output_stack.push(temp);
             } else {
                 // Check if it's a valid token before pushing (matches JS logic)
-                if ParserState::is_var(&word) || ParserState::is_operator(&word) || 
-                   ParserState::is_reserved_var(&word) || ParserState::is_reserved_constant(&word) ||
-                   ParserState::is_numeric(&word) {
+                if ParserState::is_var(&word)
+                    || ParserState::is_operator(&word)
+                    || ParserState::is_reserved_var(&word)
+                    || ParserState::is_reserved_constant(&word)
+                    || ParserState::is_numeric(&word)
+                {
                     stack.push(word);
                 } else {
                     // Unrecognized symbol - report error like JS line 3894
@@ -835,7 +898,9 @@ impl DuckyCompiler {
                         message: format!("Unexpected Symbol: {}", word),
                         column: None,
                         length: Some(word.len()),
-                        suggestion: Some("Remove this unrecognized symbol or check spelling".to_string()),
+                        suggestion: Some(
+                            "Remove this unrecognized symbol or check spelling".to_string(),
+                        ),
                     });
                     // Don't return - continue processing to find all errors
                 }
@@ -851,17 +916,16 @@ impl DuckyCompiler {
         }
 
         output_stack.push(stack);
-        
+
         let mut encoded = self.encode_expression_stack(&output_stack)?;
-        
-        if let Some(last_expr) = output_stack.last() {
-            if let Some(last_token) = last_expr.last() {
-                if !ParserState::is_operator(last_token) {
-                    encoded.push("0000".to_string());
-                }
-            }
+
+        if let Some(last_expr) = output_stack.last()
+            && let Some(last_token) = last_expr.last()
+            && !ParserState::is_operator(last_token)
+        {
+            encoded.push("0000".to_string());
         }
-        
+
         append_hex_string_array(&mut self.output_buffer, encoded)?;
         Ok(())
     }
@@ -874,15 +938,19 @@ impl DuckyCompiler {
                 message: "Nested functions not allowed".to_string(),
                 column: None,
                 length: None,
-                suggestion: Some("Close the current function with END_FUNCTION before defining a new one".to_string()),
+                suggestion: Some(
+                    "Close the current function with END_FUNCTION before defining a new one"
+                        .to_string(),
+                ),
             });
         }
         self.defining_function = true;
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 {
             let func_name = parts[1].trim_end_matches("()");
             let addr = self.output_buffer.len();
-            self.state.create_label(&format!("function_{}", func_name), addr)?;
+            self.state
+                .create_label(&format!("function_{}", func_name), addr)?;
             self.handle_if("IF FALSE THEN", false)?;
         }
         Ok(())
@@ -902,16 +970,27 @@ impl DuckyCompiler {
         self.mark_ds3();
         let func_name = line.trim().trim_end_matches("()");
         let label = format!("function_{}", func_name);
-        
+
         if let Some(&addr) = self.state.label_map.get(&label) {
             let adjusted_addr = addr + 6;
             let hex_addr = dec_to_hex(adjusted_addr / 2);
-            append_hex_string_array(&mut self.output_buffer, vec!["F7".to_string(), "F7".to_string(), hex_addr])?;
+            append_hex_string_array(
+                &mut self.output_buffer,
+                vec!["F7".to_string(), "F7".to_string(), hex_addr],
+            )?;
         } else {
-            append_hex_string_array(&mut self.output_buffer, vec!["F7".to_string(), "F7".to_string(), "XX".to_string(), "XX".to_string()])?;
+            append_hex_string_array(
+                &mut self.output_buffer,
+                vec![
+                    "F7".to_string(),
+                    "F7".to_string(),
+                    "XX".to_string(),
+                    "XX".to_string(),
+                ],
+            )?;
             self.goto_awaiting_label
                 .entry(label)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(self.output_buffer.len() - 2);
         }
         Ok(())
@@ -922,7 +1001,10 @@ impl DuckyCompiler {
         self.return_defined = true;
         let converted = line.replace("RETURN", "VAR $_f_ret =");
         self.handle_assignment(&converted)?;
-        append_hex_string_array(&mut self.output_buffer, vec!["FD".to_string(), "FD".to_string()])?;
+        append_hex_string_array(
+            &mut self.output_buffer,
+            vec!["FD".to_string(), "FD".to_string()],
+        )?;
         Ok(())
     }
 
@@ -931,11 +1013,11 @@ impl DuckyCompiler {
     }
 
     fn handle_repeat(&mut self, line: &str) -> CompilerResult<()> {
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() < 3 {
             return Ok(());
         }
-        
+
         if let Ok(count) = parts[1].parse::<usize>() {
             let remainder = parts[2..].join(" ");
             for _ in 0..count {
@@ -946,7 +1028,7 @@ impl DuckyCompiler {
     }
 
     fn handle_hold(&mut self, line: &str) -> CompilerResult<()> {
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 {
             append_hex_string_array(&mut self.output_buffer, vec![hex_encode(0xF8FF)])?;
             for key in &parts[1..] {
@@ -957,21 +1039,24 @@ impl DuckyCompiler {
     }
 
     fn handle_release(&mut self, line: &str) -> CompilerResult<()> {
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 {
             append_hex_string_array(&mut self.output_buffer, vec![hex_encode(0xE8EE)])?;
             for key in &parts[1..] {
                 self.inject_character(key)?;
             }
         } else {
-            append_hex_string_array(&mut self.output_buffer, vec!["00".to_string(), "00".to_string()])?;
+            append_hex_string_array(
+                &mut self.output_buffer,
+                vec!["00".to_string(), "00".to_string()],
+            )?;
         }
         Ok(())
     }
 
     fn handle_inject(&mut self, line: &str) -> CompilerResult<()> {
         self.mark_ds3();
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 {
             let param = parts[1].trim_start_matches("0x").trim_start_matches("0X");
             append_hex_string_array(&mut self.output_buffer, vec![hex_encode(0xE8E9)])?;
@@ -986,14 +1071,14 @@ impl DuckyCompiler {
             self.modifier_queue.clear();
         }
         append_hex_string_array(&mut self.output_buffer, vec![hex_encode(0xE9E6)])?;
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 {
             let param = parts[1..].join(" ");
             let mod_bytes = self.keyboard_layout.get_bytes_for_key(&param);
             let key_bytes: Option<Vec<String>> = None;
-            
+
             let mod_hex = if let Some(mod_codes) = mod_bytes.as_ref() {
-                if mod_codes.len() >= 1 {
+                if !mod_codes.is_empty() {
                     mod_codes[0].clone()
                 } else {
                     "00".to_string()
@@ -1001,9 +1086,9 @@ impl DuckyCompiler {
             } else {
                 "00".to_string()
             };
-            
+
             let key_hex = if let Some(key_codes) = key_bytes.as_ref() {
-                if key_codes.len() >= 1 {
+                if !key_codes.is_empty() {
                     key_codes[0].clone()
                 } else {
                     "00".to_string()
@@ -1011,7 +1096,7 @@ impl DuckyCompiler {
             } else {
                 "00".to_string()
             };
-            
+
             append_hex_string_array(&mut self.output_buffer, vec![key_hex, mod_hex])?;
         }
         Ok(())
@@ -1019,7 +1104,7 @@ impl DuckyCompiler {
 
     fn handle_inject_var(&mut self, line: &str) -> CompilerResult<()> {
         self.mark_ds3();
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 {
             let var_name = parts[1];
             append_hex_string_array(&mut self.output_buffer, vec![hex_encode(0xE9E9)])?;
@@ -1031,10 +1116,16 @@ impl DuckyCompiler {
                 if let Some(&val) = RESERVED_VARIABLES.get(var_name) {
                     append_hex_string_array(&mut self.output_buffer, vec![hex_encode(val)])?;
                 } else {
-                    return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var_name.to_string() });
+                    return Err(CompilerError::UnknownVariable {
+                        line: self.current_line_index + 1,
+                        name: var_name.to_string(),
+                    });
                 }
             } else {
-                return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var_name.to_string() });
+                return Err(CompilerError::UnknownVariable {
+                    line: self.current_line_index + 1,
+                    name: var_name.to_string(),
+                });
             }
         }
         Ok(())
@@ -1042,7 +1133,7 @@ impl DuckyCompiler {
 
     fn handle_keycode(&mut self, line: &str) -> CompilerResult<()> {
         self.mark_ds3();
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 {
             let param = parts[1].trim_start_matches("0x").trim_start_matches("0X");
             append_hex_string_array(&mut self.output_buffer, vec![hex_encode(0xE8E9)])?;
@@ -1053,51 +1144,55 @@ impl DuckyCompiler {
 
     fn handle_exfil_var(&mut self, line: &str) -> CompilerResult<()> {
         self.mark_ds3();
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 2 {
             let var_name = parts[1];
             append_hex_string_array(&mut self.output_buffer, vec![hex_encode(0xE9F6)])?;
             if let Some(addr) = self.state.get_var_address(var_name) {
                 append_hex_string_array(&mut self.output_buffer, vec![dec_to_hex(addr)])?;
             } else {
-                return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var_name.to_string() });
+                return Err(CompilerError::UnknownVariable {
+                    line: self.current_line_index + 1,
+                    name: var_name.to_string(),
+                });
             }
         }
         Ok(())
     }
 
     fn handle_modifier(&mut self, line: &str) -> CompilerResult<()> {
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
+        let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.is_empty() {
             return Ok(());
         }
-        
+
         let modifier = parts[0];
         let key = if parts.len() > 1 { parts[1] } else { "" };
-        
+
         let mod_bytes = self.keyboard_layout.get_bytes_for_key(modifier);
         let key_bytes = if !key.is_empty() {
             self.keyboard_layout.get_bytes_for_key(key)
         } else {
             None
         };
-        
-        let combined_value = if let (Some(mod_codes), Some(key_codes)) = (mod_bytes.as_ref(), key_bytes.as_ref()) {
-            if key_codes.len() >= 1 && mod_codes.len() >= 1 {
-                format!("{}{}", key_codes[0], mod_codes[0])
+
+        let combined_value =
+            if let (Some(mod_codes), Some(key_codes)) = (mod_bytes.as_ref(), key_bytes.as_ref()) {
+                if !key_codes.is_empty() && !mod_codes.is_empty() {
+                    format!("{}{}", key_codes[0], mod_codes[0])
+                } else {
+                    "0000".to_string()
+                }
+            } else if let Some(mod_codes) = mod_bytes.as_ref() {
+                if !mod_codes.is_empty() {
+                    format!("{}00", mod_codes[0])
+                } else {
+                    "0000".to_string()
+                }
             } else {
                 "0000".to_string()
-            }
-        } else if let Some(mod_codes) = mod_bytes.as_ref() {
-            if mod_codes.len() >= 1 {
-                format!("{}00", mod_codes[0])
-            } else {
-                "0000".to_string()
-            }
-        } else {
-            "0000".to_string()
-        };
-        
+            };
+
         let var_name = format!("__MOD_{}_{}", modifier, key);
         let addr = if let Some(existing_addr) = self.state.get_var_address(&var_name) {
             existing_addr
@@ -1106,7 +1201,7 @@ impl DuckyCompiler {
             self.state.assign_value(&var_name, combined_value)?;
             addr
         };
-        
+
         self.modifier_queue.push(dec_to_hex(addr));
         Ok(())
     }
@@ -1134,7 +1229,11 @@ impl DuckyCompiler {
             .unwrap_or(self.defining_button.max(1));
         append_hex_string_array(
             &mut self.output_buffer,
-            vec!["EB".to_string(), "F4".to_string(), dec_to_hex(addr as usize)],
+            vec![
+                "EB".to_string(),
+                "F4".to_string(),
+                dec_to_hex(addr as usize),
+            ],
         )?;
         self.defining_button = self.defining_button.saturating_sub(1);
         Ok(())
@@ -1142,12 +1241,12 @@ impl DuckyCompiler {
 
     fn handle_attackmode(&mut self, line: &str) -> CompilerResult<()> {
         self.mark_ds3();
-        let parts: Vec<&str> = line.trim().split_whitespace().collect();
-        
+        let parts: Vec<&str> = line.split_whitespace().collect();
+
         if parts.len() < 2 {
             return Ok(());
         }
-        
+
         let mut encoded_line: Vec<String> = Vec::new();
         let mut mode_hex = 0x0000u16;
         let mut mode_defined = false;
@@ -1210,7 +1309,10 @@ impl DuckyCompiler {
                 if let Some(addr) = self.state.get_var_address(var) {
                     encoded_line.push(dec_to_hex(addr));
                 } else {
-                    return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var.to_string() });
+                    return Err(CompilerError::UnknownVariable {
+                        line: self.current_line_index + 1,
+                        name: var.to_string(),
+                    });
                 }
             } else if word.to_ascii_uppercase().starts_with("VID_") {
                 let arg = &word[4..];
@@ -1220,7 +1322,9 @@ impl DuckyCompiler {
                         message: "Invalid VID".to_string(),
                         column: None,
                         length: None,
-                        suggestion: Some("VID must be a valid hex value (e.g., VID_0x1234)".to_string()),
+                        suggestion: Some(
+                            "VID must be a valid hex value (e.g., VID_0x1234)".to_string(),
+                        ),
                     });
                 }
                 let formatted = format_hex(arg);
@@ -1245,7 +1349,10 @@ impl DuckyCompiler {
                 if let Some(addr) = self.state.get_var_address(var) {
                     encoded_line.push(dec_to_hex(addr));
                 } else {
-                    return Err(CompilerError::UnknownVariable { line: self.current_line_index + 1, name: var.to_string() });
+                    return Err(CompilerError::UnknownVariable {
+                        line: self.current_line_index + 1,
+                        name: var.to_string(),
+                    });
                 }
             } else if word.to_ascii_uppercase().starts_with("PID_") {
                 let arg = &word[4..];
@@ -1255,7 +1362,9 @@ impl DuckyCompiler {
                         message: "Invalid PID".to_string(),
                         column: None,
                         length: None,
-                        suggestion: Some("PID must be a valid hex value (e.g., PID_0x5678)".to_string()),
+                        suggestion: Some(
+                            "PID must be a valid hex value (e.g., PID_0x5678)".to_string(),
+                        ),
                     });
                 }
                 let formatted = format_hex(arg);
@@ -1284,7 +1393,10 @@ impl DuckyCompiler {
                         message: "Invalid Manufacturer".to_string(),
                         column: None,
                         length: None,
-                        suggestion: Some("Manufacturer string must be 1-32 characters (e.g., MAN_Acme)".to_string()),
+                        suggestion: Some(
+                            "Manufacturer string must be 1-32 characters (e.g., MAN_Acme)"
+                                .to_string(),
+                        ),
                     });
                 }
                 encoded_line.push(hex_encode(0xF9F9));
@@ -1317,7 +1429,10 @@ impl DuckyCompiler {
                         message: "Invalid Product".to_string(),
                         column: None,
                         length: None,
-                        suggestion: Some("Product string must be 1-32 characters (e.g., PROD_Widget)".to_string()),
+                        suggestion: Some(
+                            "Product string must be 1-32 characters (e.g., PROD_Widget)"
+                                .to_string(),
+                        ),
                     });
                 }
                 encoded_line.push(hex_encode(0xFAFA));
@@ -1350,7 +1465,9 @@ impl DuckyCompiler {
                         message: "Invalid Serial".to_string(),
                         column: None,
                         length: None,
-                        suggestion: Some("Serial must be 1-12 digits (e.g., SERIAL_123456789012)".to_string()),
+                        suggestion: Some(
+                            "Serial must be 1-12 digits (e.g., SERIAL_123456789012)".to_string(),
+                        ),
                     });
                 }
                 if !arg.chars().all(|c| c.is_ascii_digit()) {
@@ -1381,34 +1498,32 @@ impl DuckyCompiler {
 
             i += 1;
         }
-        
+
         if mode_defined {
             encoded_line.push(hex_encode(mode_hex));
         }
 
-        if vid_defined || pid_defined {
-            if !(vid_defined && pid_defined) {
-                return Err(CompilerError::SyntaxError {
-                    line: self.current_line_index + 1,
-                    message: "VID + PID must both be defined".to_string(),
-                    column: None,
-                    length: None,
-                    suggestion: Some("Define both VID and PID together in ATTACKMODE".to_string()),
-                });
-            }
+        if (vid_defined || pid_defined) && !(vid_defined && pid_defined) {
+            return Err(CompilerError::SyntaxError {
+                line: self.current_line_index + 1,
+                message: "VID + PID must both be defined".to_string(),
+                column: None,
+                length: None,
+                suggestion: Some("Define both VID and PID together in ATTACKMODE".to_string()),
+            });
         }
-        if man_defined || prod_defined || serial_defined {
-            if !(man_defined && prod_defined && serial_defined) {
-                return Err(CompilerError::SyntaxError {
-                    line: self.current_line_index + 1,
-                    message: "MAN + PROD + SERIAL must all be defined".to_string(),
-                    column: None,
-                    length: None,
-                    suggestion: Some("Define all three: MAN_, PROD_, and SERIAL_ together".to_string()),
-                });
-            }
+        if (man_defined || prod_defined || serial_defined)
+            && !(man_defined && prod_defined && serial_defined)
+        {
+            return Err(CompilerError::SyntaxError {
+                line: self.current_line_index + 1,
+                message: "MAN + PROD + SERIAL must all be defined".to_string(),
+                column: None,
+                length: None,
+                suggestion: Some("Define all three: MAN_, PROD_, and SERIAL_ together".to_string()),
+            });
         }
-        
+
         append_hex_string_array(&mut self.output_buffer, encoded_line)?;
         Ok(())
     }
@@ -1464,77 +1579,90 @@ impl DuckyCompiler {
     fn handle_unknown(&mut self, line: &str) -> CompilerResult<()> {
         let trimmed = line.trim();
 
-        if trimmed.eq_ignore_ascii_case("RESTORE_HOST_KEYBOARD_LOCK_STATE") {
-            if let Some(&builtin) = BUILTINS_MAP.get("RESTORE_HOST_KEYBOARD_LOCK_STATE") {
-                append_hex_string_array(&mut self.output_buffer, vec![hex_encode(builtin)])?;
-                append_hex_string_array(
-                    &mut self.output_buffer,
-                    vec!["0000".to_string(), "0000".to_string(), "0000".to_string()],
-                )?;
-                return Ok(());
-            }
+        if trimmed.eq_ignore_ascii_case("RESTORE_HOST_KEYBOARD_LOCK_STATE")
+            && let Some(&builtin) = BUILTINS_MAP.get("RESTORE_HOST_KEYBOARD_LOCK_STATE")
+        {
+            append_hex_string_array(&mut self.output_buffer, vec![hex_encode(builtin)])?;
+            append_hex_string_array(
+                &mut self.output_buffer,
+                vec!["0000".to_string(), "0000".to_string(), "0000".to_string()],
+            )?;
+            return Ok(());
         }
-        
+
         if let Some(&builtin) = BUILTINS_MAP.get(trimmed) {
             append_hex_string_array(&mut self.output_buffer, vec![hex_encode(builtin)])?;
             return Ok(());
         }
-        
+
         let parts: Vec<&str> = trimmed.split_whitespace().filter(|s| *s != "-").collect();
-        
+
         if parts.len() > 1 {
             let mut key_sum = 0u8;
             let mut mod_sum = 0u8;
             let mut any_found = false;
-            
+
             for part in &parts {
                 if let Some(codes) = self.keyboard_layout.get_bytes_for_key(part) {
                     any_found = true;
                     if codes.len() >= 3 {
                         let modifier = u8::from_str_radix(&codes[0], 16).unwrap_or(0);
                         let keycode = u8::from_str_radix(&codes[2], 16).unwrap_or(0);
-                        
+
                         // STRICT COMBOS - check if key already has implicit modifier
                         if keycode != 0 && modifier != 0 {
                             // This key already contains a modifier (e.g., uppercase letter has SHIFT)
                             // Check if we're trying to add another modifier
                             for other_part in &parts {
-                                if other_part != part {
-                                    if let Some(other_codes) = self.keyboard_layout.get_bytes_for_key(other_part) {
-                                        if other_codes.len() >= 3 {
-                                            let other_mod = u8::from_str_radix(&other_codes[0], 16).unwrap_or(0);
-                                            let other_key = u8::from_str_radix(&other_codes[2], 16).unwrap_or(0);
-                                            // If other part is a pure modifier (no keycode) being combined with a key that has modifier
-                                            if other_key == 0 && other_mod != 0 {
-                                                // Find modifier name
-                                                let mod_name = self.keyboard_layout.keys.iter()
-                                                    .find(|(_, v)| v.as_str() == format!("{:02x},00,00", modifier))
-                                                    .map(|(k, _)| k.as_str())
-                                                    .unwrap_or("SHIFT");
-                                                
-                                                // Push both error messages like official compiler
-                                                self.errors.push(CompilerError::SyntaxError {
+                                if other_part != part
+                                    && let Some(other_codes) =
+                                        self.keyboard_layout.get_bytes_for_key(other_part)
+                                    && other_codes.len() >= 3
+                                {
+                                    let other_mod =
+                                        u8::from_str_radix(&other_codes[0], 16).unwrap_or(0);
+                                    let other_key =
+                                        u8::from_str_radix(&other_codes[2], 16).unwrap_or(0);
+                                    // If other part is a pure modifier (no keycode) being combined with a key that has modifier
+                                    if other_key == 0 && other_mod != 0 {
+                                        // Find modifier name
+                                        let mod_name = self
+                                            .keyboard_layout
+                                            .keys
+                                            .iter()
+                                            .find(|(_, v)| {
+                                                v.as_str() == format!("{:02x},00,00", modifier)
+                                            })
+                                            .map(|(k, _)| k.as_str())
+                                            .unwrap_or("SHIFT");
+
+                                        // Push both error messages like official compiler
+                                        self.errors.push(CompilerError::SyntaxError {
                                                     line: self.current_line_index + 1,
                                                     message: "STRICT COMBOS - PREVENTING IMPLICIT MODIFIER COMBINATION".to_string(),
                                                     column: None,
                                                     length: None,
                                                     suggestion: Some(format!("Use lowercase '{}' instead of uppercase", part.to_lowercase())),
                                                 });
-                                                
-                                                return Err(CompilerError::SyntaxError {
-                                                    line: self.current_line_index + 1,
-                                                    message: format!("IMPLICIT MODIFIER COMBINATION: {} already contains {}", part, mod_name),
-                                                    column: None,
-                                                    length: Some(part.len()),
-                                                    suggestion: Some(format!("Use lowercase '{}' instead", part.to_lowercase())),
-                                                });
-                                            }
-                                        }
+
+                                        return Err(CompilerError::SyntaxError {
+                                            line: self.current_line_index + 1,
+                                            message: format!(
+                                                "IMPLICIT MODIFIER COMBINATION: {} already contains {}",
+                                                part, mod_name
+                                            ),
+                                            column: None,
+                                            length: Some(part.len()),
+                                            suggestion: Some(format!(
+                                                "Use lowercase '{}' instead",
+                                                part.to_lowercase()
+                                            )),
+                                        });
                                     }
                                 }
                             }
                         }
-                        
+
                         if keycode != 0 {
                             key_sum += keycode;
                             if modifier != 0 {
@@ -1543,23 +1671,32 @@ impl DuckyCompiler {
                         } else {
                             mod_sum += modifier;
                         }
-                    } else if codes.len() >= 1 {
+                    } else if !codes.is_empty() {
                         let byte_val = u8::from_str_radix(&codes[0], 16).unwrap_or(0);
                         key_sum += byte_val;
                     }
                 } else {
-                    return Err(CompilerError::KeyNotFound { line: self.current_line_index + 1, key: part.to_string() });
+                    return Err(CompilerError::KeyNotFound {
+                        line: self.current_line_index + 1,
+                        key: part.to_string(),
+                    });
                 }
             }
-            
+
             if !any_found {
-                return Err(CompilerError::KeyNotFound { line: self.current_line_index + 1, key: trimmed.to_string() });
+                return Err(CompilerError::KeyNotFound {
+                    line: self.current_line_index + 1,
+                    key: trimmed.to_string(),
+                });
             }
-            
-            append_hex_string_array(&mut self.output_buffer, vec![format!("{:02x}", key_sum), format!("{:02x}", mod_sum)])?;
+
+            append_hex_string_array(
+                &mut self.output_buffer,
+                vec![format!("{:02x}", key_sum), format!("{:02x}", mod_sum)],
+            )?;
             return Ok(());
         }
-        
+
         self.inject_character(trimmed)?;
         Ok(())
     }
@@ -1574,36 +1711,48 @@ impl DuckyCompiler {
 
     fn post_process(&mut self) -> CompilerResult<()> {
         if !self.state.block_stack.is_empty() {
-            return Err(CompilerError::MissingEnd { line: self.current_line_index + 1, block_type: "IF/WHILE".to_string() });
+            return Err(CompilerError::MissingEnd {
+                line: self.current_line_index + 1,
+                block_type: "IF/WHILE".to_string(),
+            });
         }
-        
+
         if self.inside_string_block {
-            return Err(CompilerError::MissingEnd { line: self.current_line_index + 1, block_type: "STRING".to_string() });
+            return Err(CompilerError::MissingEnd {
+                line: self.current_line_index + 1,
+                block_type: "STRING".to_string(),
+            });
         }
-        
+
         if self.inside_stringln_block {
-            return Err(CompilerError::MissingEnd { line: self.current_line_index + 1, block_type: "STRINGLN".to_string() });
+            return Err(CompilerError::MissingEnd {
+                line: self.current_line_index + 1,
+                block_type: "STRINGLN".to_string(),
+            });
         }
-        
+
         if self.defining_button > 0 {
-            return Err(CompilerError::MissingEnd { line: self.current_line_index + 1, block_type: "BUTTON".to_string() });
+            return Err(CompilerError::MissingEnd {
+                line: self.current_line_index + 1,
+                block_type: "BUTTON".to_string(),
+            });
         }
-        
+
         Ok(())
     }
 
     fn finalize(&mut self) -> CompilerResult<Vec<u8>> {
         let mut added_bytes = 0;
-        
+
         if self.state.requires_lang_pack {
             self.generate_lang_pack()?;
         }
-        
+
         if self.state.var_values.len() > 1 {
             let mut temp_buffer = Vec::new();
             temp_buffer.push("E8E8".to_string());
             added_bytes += 2;
-            
+
             for i in 1..self.state.var_values.len() {
                 let val = &self.state.var_values[i];
                 let formatted = if val.len() == 4 {
@@ -1617,18 +1766,18 @@ impl DuckyCompiler {
                 } else {
                     format!("{:0<4}", val)
                 };
-                
+
                 temp_buffer.push(formatted);
                 added_bytes += 2;
             }
-            
+
             temp_buffer.push("E8E8".to_string());
             added_bytes += 2;
-            
+
             temp_buffer.extend(self.output_buffer.clone());
             self.output_buffer = temp_buffer;
         }
-        
+
         let mut ui16_buffer = Vec::new();
         let joined = self.output_buffer.join("");
         for i in (0..joined.len()).step_by(4) {
@@ -1638,50 +1787,55 @@ impl DuckyCompiler {
                 ui16_buffer.push(format!("{:0<4}", &joined[i..]));
             }
         }
-        
+
         for i in 0..ui16_buffer.len() {
-            if ui16_buffer[i] == "F8F8" || ui16_buffer[i] == "F7F7" {
-                if i + 1 < ui16_buffer.len() {
-                    if let Ok(current_addr) = usize::from_str_radix(&ui16_buffer[i + 1], 16) {
-                        let shifted_addr = current_addr + (added_bytes / 2);
-                        ui16_buffer[i + 1] = hex_encode(shifted_addr as u16);
-                    }
-                }
+            if (ui16_buffer[i] == "F8F8" || ui16_buffer[i] == "F7F7")
+                && i + 1 < ui16_buffer.len()
+                && let Ok(current_addr) = usize::from_str_radix(&ui16_buffer[i + 1], 16)
+            {
+                let shifted_addr = current_addr + (added_bytes / 2);
+                ui16_buffer[i + 1] = hex_encode(shifted_addr as u16);
             }
         }
-        
+
         let final_hex = ui16_buffer.join("");
         Ok(hex_to_byte_array(&final_hex))
     }
 
     fn generate_lang_pack(&mut self) -> CompilerResult<()> {
-        let shift_codes = self.keyboard_layout.get_bytes_for_key("SHIFT")
+        let shift_codes = self
+            .keyboard_layout
+            .get_bytes_for_key("SHIFT")
             .unwrap_or_else(|| vec!["02".to_string(), "00".to_string(), "00".to_string()]);
         let shift = &shift_codes[0];
-        
+
         let to_pack = vec![
-            "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
-            "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-            "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"
+            "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q",
+            "r", "s", "t", "u", "v", "w", "x", "y", "z", "1", "2", "3", "4", "5", "6", "7", "8",
+            "9", "0",
         ];
-        
+
         let _marker_addr = self.state.allocate_var("LANG_MARKER");
         self.state.assign_value("LANG_MARKER", hex_encode(0xEEEE))?;
-        
+
         for ch in to_pack {
-            if let Some(codes) = self.keyboard_layout.get_bytes_for_key(ch) {
-                if codes.len() >= 3 {
-                    let keycode = &codes[2];
-                    if let (Ok(shift_val), Ok(key_val)) = (u8::from_str_radix(shift, 16), u8::from_str_radix(keycode, 16)) {
-                        let combined_u16 = ((shift_val as u16) << 8) | (key_val as u16);
-                        let var_name = format!("LANG_{}", ch);
-                        let _addr = self.state.allocate_var(&var_name);
-                        self.state.assign_value(&var_name, hex_encode(combined_u16))?;
-                    }
+            if let Some(codes) = self.keyboard_layout.get_bytes_for_key(ch)
+                && codes.len() >= 3
+            {
+                let keycode = &codes[2];
+                if let (Ok(shift_val), Ok(key_val)) = (
+                    u8::from_str_radix(shift, 16),
+                    u8::from_str_radix(keycode, 16),
+                ) {
+                    let combined_u16 = ((shift_val as u16) << 8) | (key_val as u16);
+                    let var_name = format!("LANG_{}", ch);
+                    let _addr = self.state.allocate_var(&var_name);
+                    self.state
+                        .assign_value(&var_name, hex_encode(combined_u16))?;
                 }
             }
         }
-        
+
         Ok(())
     }
 }

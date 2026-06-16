@@ -18,12 +18,15 @@ pub fn swap_hex(hex_str: &str) -> String {
 }
 
 pub fn format_hex(hex_str: &str) -> String {
-    hex_str.trim_start_matches("0x").trim_start_matches("0X").to_lowercase()
+    hex_str
+        .trim_start_matches("0x")
+        .trim_start_matches("0X")
+        .to_lowercase()
 }
 
 pub fn build_delay_bytes(mut delay: u32) -> Vec<String> {
     let mut result = Vec::new();
-    
+
     while delay > 0 {
         result.push("00".to_string());
         if delay > 255 {
@@ -34,11 +37,14 @@ pub fn build_delay_bytes(mut delay: u32) -> Vec<String> {
             delay = 0;
         }
     }
-    
+
     result
 }
 
-pub fn append_hex_string_array(output: &mut Vec<String>, hex_array: Vec<String>) -> CompilerResult<()> {
+pub fn append_hex_string_array(
+    output: &mut Vec<String>,
+    hex_array: Vec<String>,
+) -> CompilerResult<()> {
     for hex in hex_array {
         if hex.len() > 2 {
             output.push(hex[0..2].to_string());
@@ -53,14 +59,14 @@ pub fn append_hex_string_array(output: &mut Vec<String>, hex_array: Vec<String>)
 pub fn hex_to_byte_array(hex_string: &str) -> Vec<u8> {
     let mut result = Vec::new();
     let clean = hex_string.replace(" ", "");
-    
+
     for i in (0..clean.len()).step_by(2) {
-        if i + 2 <= clean.len() {
-            if let Ok(byte) = u8::from_str_radix(&clean[i..i + 2], 16) {
-                result.push(byte);
-            }
+        if i + 2 <= clean.len()
+            && let Ok(byte) = u8::from_str_radix(&clean[i..i + 2], 16)
+        {
+            result.push(byte);
         }
     }
-    
+
     result
 }

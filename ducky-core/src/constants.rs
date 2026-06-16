@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 
 lazy_static! {
     pub static ref OPERATOR_MAP: HashMap<&'static str, u16> = {
@@ -26,7 +26,6 @@ lazy_static! {
         m.insert("^", 0xE80F);
         m
     };
-
     pub static ref RESERVED_VARIABLES: HashMap<&'static str, u16> = {
         let mut m = HashMap::new();
         m.insert("$_BUTTON_ENABLED", 0x4280);
@@ -75,7 +74,6 @@ lazy_static! {
         m.insert("$_RANDOM_CHAR_KEYCODE", 0x42FE);
         m
     };
-
     pub static ref RESERVED_CONSTANTS: HashMap<&'static str, u16> = {
         let mut m = HashMap::new();
         m.insert("FALSE", 0x4267);
@@ -88,7 +86,6 @@ lazy_static! {
         m.insert("CHROMEOS", 0x4274);
         m
     };
-
     pub static ref BUILTINS_MAP: HashMap<&'static str, u16> = {
         let mut m = HashMap::new();
         m.insert("RESET", 0xED04);
@@ -125,11 +122,8 @@ lazy_static! {
         m.insert("RESTORE_PAYLOAD", 0xE9F9);
         m
     };
-
-    pub static ref DOUBLE_OPERATORS: Vec<&'static str> = {
-        vec!["&&", "||", "<<", ">>", "==", "!=", "()", "<=", ">="]
-    };
-
+    pub static ref DOUBLE_OPERATORS: Vec<&'static str> =
+        vec!["&&", "||", "<<", ">>", "==", "!=", "()", "<=", ">="];
     pub static ref REQUIRES_LANG_PACK: Vec<&'static str> = {
         vec![
             "$_RANDOM_LOWER_LETTER_KEYCODE",

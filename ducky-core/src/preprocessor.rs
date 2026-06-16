@@ -1,10 +1,19 @@
 use crate::errors::{CompilerError, CompilerResult, CompilerWarning};
-use crate::lexer::{DEFINE_REGEX, ELSEDEF_REGEX, ENDIFDEF_REGEX, END_STRING_REGEX, IFDEF_REGEX, IFNOTDEF_REGEX, PREPROCESSOR_DISABLED, REM_REGEX, STRINGLN_BLOCK_REGEX, STRING_BLOCK_REGEX};
+use crate::lexer::{
+    DEFINE_REGEX, ELSEDEF_REGEX, END_STRING_REGEX, ENDIFDEF_REGEX, IFDEF_REGEX, IFNOTDEF_REGEX,
+    PREPROCESSOR_DISABLED, REM_REGEX, STRING_BLOCK_REGEX, STRINGLN_BLOCK_REGEX,
+};
 
 pub struct Preprocessor {
     labels: Vec<String>,
     replacements: Vec<String>,
     pub warnings: Vec<CompilerWarning>,
+}
+
+impl Default for Preprocessor {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Preprocessor {
@@ -30,11 +39,14 @@ impl Preprocessor {
                     .nth(1)
                     .unwrap_or("")
                     .to_string();
-                
+
                 if self.labels.contains(&label) {
-                    return Err(CompilerError::DuplicateDefinition { line: line_idx + 1, name: label });
+                    return Err(CompilerError::DuplicateDefinition {
+                        line: line_idx + 1,
+                        name: label,
+                    });
                 }
-                
+
                 self.labels.push(label);
                 self.replacements.push(replacement);
             }
@@ -46,7 +58,7 @@ impl Preprocessor {
         let mut result = Vec::new();
         let mut ifdef_stack: Vec<(String, bool)> = Vec::new();
 
-        for (_i, line) in lines.iter().enumerate() {
+        for line in lines.iter() {
             let trimmed = line.trim();
             let found;
             let mut label = String::new();
@@ -79,11 +91,9 @@ impl Preprocessor {
                         inside_enabled_code = false;
                         break;
                     }
-                } else if IFNOTDEF_REGEX.is_match(mode) {
-                    if *current_val {
-                        inside_enabled_code = false;
-                        break;
-                    }
+                } else if IFNOTDEF_REGEX.is_match(mode) && *current_val {
+                    inside_enabled_code = false;
+                    break;
                 }
             }
 
@@ -100,7 +110,8 @@ impl Preprocessor {
     fn search_label(&self, label: &str, expected: &str) -> bool {
         for (i, l) in self.labels.iter().enumerate() {
             if l == label {
-                return self.replacements
+                return self
+                    .replacements
                     .get(i)
                     .map(|r| r.trim() == expected)
                     .unwrap_or(false);
@@ -154,18 +165,16 @@ impl Preprocessor {
             let mut modified_line = line.clone();
             if inside_string_block || inside_stringln_block {
                 for (i, label) in self.labels.iter().enumerate() {
-                    if label.starts_with('#') {
-                        if modified_line.contains(label) {
-                            if !suppress_next_warning {
-                                self.warnings.push(CompilerWarning::DefineReplacement {
-                                    line: line_num + 1,
-                                    label: label.clone(),
-                                    old: label.clone(),
-                                    new: self.replacements[i].clone(),
-                                });
-                            }
-                            modified_line = modified_line.replace(label, &self.replacements[i]);
+                    if label.starts_with('#') && modified_line.contains(label) {
+                        if !suppress_next_warning {
+                            self.warnings.push(CompilerWarning::DefineReplacement {
+                                line: line_num + 1,
+                                label: label.clone(),
+                                old: label.clone(),
+                                new: self.replacements[i].clone(),
+                            });
                         }
+                        modified_line = modified_line.replace(label, &self.replacements[i]);
                     }
                 }
 
@@ -199,24 +208,22 @@ impl Preprocessor {
                     break;
                 }
             }
-            
+
             if !replacement_made {
                 modified_line = line.clone();
             }
 
             for (i, label) in self.labels.iter().enumerate() {
-                if label.starts_with('#') {
-                    if modified_line.contains(label) {
-                        if !suppress_next_warning {
-                            self.warnings.push(CompilerWarning::DefineReplacement {
-                                line: line_num + 1,
-                                label: label.clone(),
-                                old: label.clone(),
-                                new: self.replacements[i].clone(),
-                            });
-                        }
-                        modified_line = modified_line.replace(label, &self.replacements[i]);
+                if label.starts_with('#') && modified_line.contains(label) {
+                    if !suppress_next_warning {
+                        self.warnings.push(CompilerWarning::DefineReplacement {
+                            line: line_num + 1,
+                            label: label.clone(),
+                            old: label.clone(),
+                            new: self.replacements[i].clone(),
+                        });
                     }
+                    modified_line = modified_line.replace(label, &self.replacements[i]);
                 }
             }
 

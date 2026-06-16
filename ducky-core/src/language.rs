@@ -10,7 +10,7 @@ pub struct KeyboardLayout {
 impl KeyboardLayout {
     pub fn default_us() -> Self {
         let mut keys = HashMap::new();
-        
+
         keys.insert("CTRL".to_string(), "01,00,00".to_string());
         keys.insert("CONTROL".to_string(), "01,00,00".to_string());
         keys.insert("SHIFT".to_string(), "02,00,00".to_string());
@@ -18,7 +18,7 @@ impl KeyboardLayout {
         keys.insert("GUI".to_string(), "08,00,00".to_string());
         keys.insert("WINDOWS".to_string(), "08,00,00".to_string());
         keys.insert("COMMAND".to_string(), "08,00,00".to_string());
-        
+
         keys.insert("a".to_string(), "00,00,04".to_string());
         keys.insert("A".to_string(), "02,00,04".to_string());
         keys.insert("b".to_string(), "00,00,05".to_string());
@@ -71,7 +71,7 @@ impl KeyboardLayout {
         keys.insert("Y".to_string(), "02,00,1c".to_string());
         keys.insert("z".to_string(), "00,00,1d".to_string());
         keys.insert("Z".to_string(), "02,00,1d".to_string());
-        
+
         keys.insert("1".to_string(), "00,00,1e".to_string());
         keys.insert("!".to_string(), "02,00,1e".to_string());
         keys.insert("2".to_string(), "00,00,1f".to_string());
@@ -92,7 +92,7 @@ impl KeyboardLayout {
         keys.insert("(".to_string(), "02,00,26".to_string());
         keys.insert("0".to_string(), "00,00,27".to_string());
         keys.insert(")".to_string(), "02,00,27".to_string());
-        
+
         keys.insert("ENTER".to_string(), "00,00,28".to_string());
         keys.insert("ESC".to_string(), "00,00,29".to_string());
         keys.insert("ESCAPE".to_string(), "00,00,29".to_string());
@@ -100,7 +100,7 @@ impl KeyboardLayout {
         keys.insert("TAB".to_string(), "00,00,2b".to_string());
         keys.insert("SPACE".to_string(), "00,00,2c".to_string());
         keys.insert(" ".to_string(), "00,00,2c".to_string());
-        
+
         keys.insert("-".to_string(), "00,00,2d".to_string());
         keys.insert("_".to_string(), "02,00,2d".to_string());
         keys.insert("=".to_string(), "00,00,2e".to_string());
@@ -123,7 +123,7 @@ impl KeyboardLayout {
         keys.insert(">".to_string(), "02,00,37".to_string());
         keys.insert("/".to_string(), "00,00,38".to_string());
         keys.insert("?".to_string(), "02,00,38".to_string());
-        
+
         keys.insert("CAPSLOCK".to_string(), "00,00,39".to_string());
         keys.insert("F1".to_string(), "00,00,3a".to_string());
         keys.insert("F2".to_string(), "00,00,3b".to_string());
@@ -137,7 +137,7 @@ impl KeyboardLayout {
         keys.insert("F10".to_string(), "00,00,43".to_string());
         keys.insert("F11".to_string(), "00,00,44".to_string());
         keys.insert("F12".to_string(), "00,00,45".to_string());
-        
+
         keys.insert("PRINTSCREEN".to_string(), "00,00,46".to_string());
         keys.insert("SCROLLLOCK".to_string(), "00,00,47".to_string());
         keys.insert("PAUSE".to_string(), "00,00,48".to_string());
@@ -160,13 +160,13 @@ impl KeyboardLayout {
         keys.insert("NUMLOCK".to_string(), "00,00,53".to_string());
         keys.insert("MENU".to_string(), "00,00,65".to_string());
         keys.insert("APP".to_string(), "00,00,65".to_string());
-        
+
         KeyboardLayout { keys }
     }
-    
+
     pub fn get_bytes_for_key(&self, key: &str) -> Option<Vec<String>> {
-        self.keys.get(key).map(|codes| {
-            codes.split(',').map(|s| s.to_string()).collect()
-        })
+        self.keys
+            .get(key)
+            .map(|codes| codes.split(',').map(|s| s.to_string()).collect())
     }
 }
