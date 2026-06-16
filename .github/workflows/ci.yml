@@ -43,7 +43,7 @@ jobs:
             . -> target
 
       - name: Run clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets
 
   test:
     name: cargo test

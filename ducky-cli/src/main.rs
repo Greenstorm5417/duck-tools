@@ -124,7 +124,7 @@ fn main() {
             stats,
             hex,
         } => {
-            build_command(input, output, layout, config.clone(), verbose, stats, hex);
+            build_command(input, output, layout, config, verbose, stats, hex);
         }
         Commands::Fmt {
             input,
@@ -365,7 +365,13 @@ fn init_command(output: Option<PathBuf>) {
         println!("  Added workspace.main_file = \"helloworld.txt\"");
     }
 
-    let toml_str = toml::to_string_pretty(&config).expect("Failed to serialize config");
+    let toml_str = match toml::to_string_pretty(&config) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("Error serializing config: {}", e);
+            std::process::exit(1);
+        }
+    };
     let content = format!(
         "# DuckyScript Configuration File\n# Run 'duck fmt' or 'duck lint' to add formatter/linter sections\n\n{}",
         toml_str
@@ -497,7 +503,7 @@ fn load_config(config_path: Option<PathBuf>) -> Option<DuckyConfig> {
 }
 
 fn fmt_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: bool, verbose: bool) {
-    let config = match load_config(config_path.clone()) {
+    let config = match load_config(config_path) {
         Some(cfg) => cfg,
         None => {
             eprintln!("Error: No configuration file found.");
@@ -609,7 +615,7 @@ fn fmt_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: bool
 }
 
 fn lint_command(inputs: Vec<PathBuf>, config_path: Option<PathBuf>, dry_run: bool, verbose: bool) {
-    let config = match load_config(config_path.clone()) {
+    let config = match load_config(config_path) {
         Some(cfg) => cfg,
         None => {
             eprintln!("Error: No configuration file found.");

@@ -1,3 +1,5 @@
+#![allow(clippy::panic)]
+
 use ducky_core::DuckyCompiler;
 use sha2::{Digest, Sha256};
 use std::fs;

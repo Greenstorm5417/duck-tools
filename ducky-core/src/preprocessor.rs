@@ -1,7 +1,7 @@
 use crate::errors::{CompilerError, CompilerResult, CompilerWarning};
 use crate::lexer::{
-    DEFINE_REGEX, ELSEDEF_REGEX, END_STRING_REGEX, ENDIFDEF_REGEX, IFDEF_REGEX, IFNOTDEF_REGEX,
-    PREPROCESSOR_DISABLED, REM_REGEX, STRING_BLOCK_REGEX, STRINGLN_BLOCK_REGEX,
+    is_define, is_elsedef, is_end_string, is_endifdef, is_ifdef, is_ifnotdef,
+    is_preprocessor_disabled, is_rem, is_string_block, is_stringln_block,
 };
 
 pub struct Preprocessor {
@@ -28,7 +28,7 @@ impl Preprocessor {
     pub fn gather_defines(&mut self, lines: &[String]) -> CompilerResult<()> {
         for (line_idx, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
-            if DEFINE_REGEX.is_match(trimmed) {
+            if is_define(trimmed) {
                 let words: Vec<&str> = trimmed.split_whitespace().collect();
                 if words.len() < 3 {
                     continue;
@@ -55,43 +55,44 @@ impl Preprocessor {
     }
 
     pub fn parse_ifdefs(&self, lines: Vec<String>) -> CompilerResult<Vec<String>> {
-        let mut result = Vec::new();
+        let mut result = Vec::with_capacity(lines.len());
         let mut ifdef_stack: Vec<(String, bool)> = Vec::new();
 
-        for line in lines.iter() {
-            let trimmed = line.trim();
-            let found;
-            let mut label = String::new();
+        for line in lines {
+            {
+                let trimmed = line.trim();
+                let mut label = String::new();
 
-            if IFDEF_REGEX.is_match(trimmed) || IFNOTDEF_REGEX.is_match(trimmed) {
-                let words: Vec<&str> = trimmed.split_whitespace().collect();
-                if words.len() >= 2 {
-                    label = words[1].to_string();
+                if is_ifdef(trimmed) || is_ifnotdef(trimmed) {
+                    let words: Vec<&str> = trimmed.split_whitespace().collect();
+                    if words.len() >= 2 {
+                        label = words[1].to_string();
+                    }
                 }
-            }
 
-            if IFDEF_REGEX.is_match(trimmed) {
-                found = self.search_label(&label, "TRUE");
-                ifdef_stack.push((trimmed.to_string(), found));
-            } else if IFNOTDEF_REGEX.is_match(trimmed) {
-                found = !self.search_label(&label, "FALSE");
-                ifdef_stack.push((trimmed.to_string(), found));
-            } else if ELSEDEF_REGEX.is_match(trimmed) {
-                if let Some((mode, val)) = ifdef_stack.pop() {
-                    ifdef_stack.push((mode, !val));
+                if is_ifdef(trimmed) {
+                    let found = self.search_label(&label, "TRUE");
+                    ifdef_stack.push((trimmed.to_string(), found));
+                } else if is_ifnotdef(trimmed) {
+                    let found = !self.search_label(&label, "FALSE");
+                    ifdef_stack.push((trimmed.to_string(), found));
+                } else if is_elsedef(trimmed) {
+                    if let Some((mode, val)) = ifdef_stack.pop() {
+                        ifdef_stack.push((mode, !val));
+                    }
+                } else if is_endifdef(trimmed) {
+                    ifdef_stack.pop();
                 }
-            } else if ENDIFDEF_REGEX.is_match(trimmed) {
-                ifdef_stack.pop();
             }
 
             let mut inside_enabled_code = true;
             for (mode, current_val) in &ifdef_stack {
-                if IFDEF_REGEX.is_match(mode) {
+                if is_ifdef(mode) {
                     if !current_val {
                         inside_enabled_code = false;
                         break;
                     }
-                } else if IFNOTDEF_REGEX.is_match(mode) && *current_val {
+                } else if is_ifnotdef(mode) && *current_val {
                     inside_enabled_code = false;
                     break;
                 }
@@ -100,7 +101,7 @@ impl Preprocessor {
             if !inside_enabled_code {
                 result.push(format!("PREPROCESSOR_DISABLED {}", line));
             } else {
-                result.push(line.clone());
+                result.push(line);
             }
         }
 
@@ -122,48 +123,94 @@ impl Preprocessor {
     }
 
     pub fn process(&mut self, lines: Vec<String>) -> Vec<String> {
-        let mut result = Vec::new();
+        let mut result = Vec::with_capacity(lines.len());
         let mut inside_string_block = false;
         let mut inside_stringln_block = false;
         let mut suppress_next_warning = false;
 
-        for (line_num, line) in lines.iter().enumerate() {
-            // Check if this line has a suppression comment
+        for (line_num, line) in lines.into_iter().enumerate() {
             let trimmed = line.trim();
+
             if trimmed.starts_with("REM ducky-ignore-next-line") {
                 suppress_next_warning = true;
-                result.push(line.clone());
+                result.push(line);
                 continue;
             }
-            if line.trim().is_empty() {
-                result.push(line.clone());
+            if trimmed.is_empty() {
+                result.push(line);
                 continue;
             }
 
-            if REM_REGEX.is_match(line.trim())
-                || DEFINE_REGEX.is_match(line.trim())
-                || IFDEF_REGEX.is_match(line.trim())
-                || IFNOTDEF_REGEX.is_match(line.trim())
-                || ELSEDEF_REGEX.is_match(line.trim())
-                || PREPROCESSOR_DISABLED.is_match(line.trim())
+            if is_rem(trimmed)
+                || is_define(trimmed)
+                || is_ifdef(trimmed)
+                || is_ifnotdef(trimmed)
+                || is_elsedef(trimmed)
+                || is_preprocessor_disabled(trimmed)
             {
-                result.push(line.clone());
+                result.push(line);
                 continue;
             }
 
-            let trimmed = line.trim();
-
-            if END_STRING_REGEX.is_match(trimmed) {
+            if is_end_string(trimmed) {
                 inside_string_block = false;
                 inside_stringln_block = false;
-            } else if STRING_BLOCK_REGEX.is_match(trimmed) {
+            } else if is_string_block(trimmed) {
                 inside_string_block = true;
-            } else if STRINGLN_BLOCK_REGEX.is_match(trimmed) {
+            } else if is_stringln_block(trimmed) {
                 inside_stringln_block = true;
             }
 
-            let mut modified_line = line.clone();
-            if inside_string_block || inside_stringln_block {
+            let in_block = inside_string_block || inside_stringln_block;
+            let mut modified_line = line;
+
+            if in_block {
+                if modified_line.contains('#') {
+                    for (i, label) in self.labels.iter().enumerate() {
+                        if label.starts_with('#') && modified_line.contains(label) {
+                            if !suppress_next_warning {
+                                self.warnings.push(CompilerWarning::DefineReplacement {
+                                    line: line_num + 1,
+                                    label: label.clone(),
+                                    old: label.clone(),
+                                    new: self.replacements[i].clone(),
+                                });
+                            }
+                            modified_line = modified_line.replace(label, &self.replacements[i]);
+                        }
+                    }
+                }
+
+                suppress_next_warning = false;
+                result.push(modified_line);
+                continue;
+            }
+
+            for (i, label) in self.labels.iter().enumerate() {
+                if !label.starts_with('#') && modified_line.split_whitespace().any(|w| w == label) {
+                    let words: Vec<&str> = modified_line.split_whitespace().collect();
+                    let mut new_words = Vec::with_capacity(words.len());
+                    for word in words {
+                        if word == label {
+                            new_words.push(self.replacements[i].clone());
+                            if !suppress_next_warning {
+                                self.warnings.push(CompilerWarning::DefineReplacement {
+                                    line: line_num + 1,
+                                    label: label.clone(),
+                                    old: label.clone(),
+                                    new: self.replacements[i].clone(),
+                                });
+                            }
+                        } else {
+                            new_words.push(word.to_string());
+                        }
+                    }
+                    modified_line = new_words.join(" ");
+                    break;
+                }
+            }
+
+            if modified_line.contains('#') {
                 for (i, label) in self.labels.iter().enumerate() {
                     if label.starts_with('#') && modified_line.contains(label) {
                         if !suppress_next_warning {
@@ -177,58 +224,10 @@ impl Preprocessor {
                         modified_line = modified_line.replace(label, &self.replacements[i]);
                     }
                 }
-
-                suppress_next_warning = false;
-                result.push(modified_line);
-                continue;
-            }
-
-            let mut replacement_made = false;
-            for (i, label) in self.labels.iter().enumerate() {
-                if !label.starts_with('#') && modified_line.split_whitespace().any(|w| w == label) {
-                    let words: Vec<&str> = modified_line.split_whitespace().collect();
-                    let mut new_words = Vec::new();
-                    for word in words {
-                        if word == label {
-                            new_words.push(self.replacements[i].clone());
-                            if !suppress_next_warning {
-                                self.warnings.push(CompilerWarning::DefineReplacement {
-                                    line: line_num + 1,
-                                    label: label.clone(),
-                                    old: label.clone(),
-                                    new: self.replacements[i].clone(),
-                                });
-                            }
-                            replacement_made = true;
-                        } else {
-                            new_words.push(word.to_string());
-                        }
-                    }
-                    modified_line = new_words.join(" ");
-                    break;
-                }
-            }
-
-            if !replacement_made {
-                modified_line = line.clone();
-            }
-
-            for (i, label) in self.labels.iter().enumerate() {
-                if label.starts_with('#') && modified_line.contains(label) {
-                    if !suppress_next_warning {
-                        self.warnings.push(CompilerWarning::DefineReplacement {
-                            line: line_num + 1,
-                            label: label.clone(),
-                            old: label.clone(),
-                            new: self.replacements[i].clone(),
-                        });
-                    }
-                    modified_line = modified_line.replace(label, &self.replacements[i]);
-                }
             }
 
             suppress_next_warning = false;
-            result.push(modified_line.clone());
+            result.push(modified_line);
         }
 
         result

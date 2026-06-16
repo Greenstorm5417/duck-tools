@@ -3,7 +3,7 @@ members = ["ducky-core", "ducky-cli", "ducky-lsp", "ducky-fmt", "ducky-lint"]
 resolver = "2"
 
 [workspace.package]
-version = "0.0.1"
+version = "1.1.0"
 edition = "2024"
 authors = ["Greenstorm5417"]
 repository = "https://github.com/Greenstorm5417/duck-tools"
@@ -13,14 +13,13 @@ license = "MIT"
 keywords = ["duckyscript", "compiler", "usb-rubber-ducky", "hak5"]
 categories = ["command-line-utilities", "development-tools"]
 publish = false
-doctest = false
 
 [workspace.dependencies]
 regex = "1.12.4"
 lazy_static = "1.5.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
-toml = "1.1.2+spec-1.1.0"
+toml = "1.1.2"
 clap = { version = "4.6.1", features = ["derive"] }
 sha2 = "0.11.0"
 hex = "0.4.3"
@@ -29,6 +28,24 @@ thiserror = "2.0.18"
 tower-lsp = "0.20.0"
 tokio = { version = "1.52.3", features = ["full"] }
 dashmap = "6.2.1"
+
+[workspace.lints.rust]
+unused = { level = "deny", priority = -1 }
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+inefficient_to_string = "deny"
+cloned_instead_of_copied = "deny"
+trivially_copy_pass_by_ref = "deny"
+clone_on_ref_ptr = "deny"
+redundant_clone = "deny"
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+unimplemented = "warn"
+todo = "warn"
+unreachable = "warn"
+indexing_slicing = "allow"
 
 [profile.release]
 lto = "fat"
@@ -47,4 +64,15 @@ split-debuginfo = "off"
 # The profile that 'dist' will build with
 [profile.dist]
 inherits = "release"
+lto = "thin"
+
+[profile.bench]
+debug = true
+lto = "fat"
+codegen-units = 1
+
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = "none"
 lto = "thin"

@@ -1,12 +1,38 @@
 use crate::errors::CompilerResult;
 
+const HEX_DIGITS: &[u8; 16] = b"0123456789abcdef";
+
 pub fn hex_encode(value: u16) -> String {
     let bytes = value.to_le_bytes();
-    format!("{:02x}{:02x}", bytes[0], bytes[1])
+    let mut s = String::with_capacity(4);
+    for &byte in &bytes {
+        s.push(HEX_DIGITS[(byte >> 4) as usize] as char);
+        s.push(HEX_DIGITS[(byte & 0x0f) as usize] as char);
+    }
+    s
 }
 
 pub fn dec_to_hex(value: usize) -> String {
-    format!("{:04x}", value)
+    let mut tmp = [0u8; 16];
+    let mut i = tmp.len();
+    let mut v = value;
+    loop {
+        i -= 1;
+        tmp[i] = HEX_DIGITS[v & 0x0f];
+        v >>= 4;
+        if v == 0 {
+            break;
+        }
+    }
+    let digits = &tmp[i..];
+    let mut s = String::with_capacity(digits.len().max(4));
+    for _ in digits.len()..4 {
+        s.push('0');
+    }
+    for &d in digits {
+        s.push(d as char);
+    }
+    s
 }
 
 pub fn swap_hex(hex_str: &str) -> String {
@@ -41,19 +67,31 @@ pub fn build_delay_bytes(mut delay: u32) -> Vec<String> {
     result
 }
 
-pub fn append_hex_string_array(
-    output: &mut Vec<String>,
-    hex_array: Vec<String>,
-) -> CompilerResult<()> {
+pub fn append_hex_string_array(output: &mut Vec<u8>, hex_array: Vec<String>) -> CompilerResult<()> {
     for hex in hex_array {
         if hex.len() > 2 {
-            output.push(hex[0..2].to_string());
-            output.push(hex[2..4].to_string());
+            output.push(parse_hex_byte(&hex[0..2]));
+            output.push(parse_hex_byte(&hex[2..4]));
         } else {
-            output.push(hex);
+            output.push(parse_hex_byte(&hex));
         }
     }
     Ok(())
+}
+
+fn parse_hex_byte(s: &str) -> u8 {
+    u8::from_str_radix(s, 16).unwrap_or(0)
+}
+
+pub fn normalize_var_value(val: &str) -> (u8, u8) {
+    let s = match val.len() {
+        4 => val.to_string(),
+        2 => format!("00{}", val),
+        1 => format!("000{}", val),
+        n if n > 4 => val[0..4].to_string(),
+        _ => format!("{:0<4}", val),
+    };
+    (parse_hex_byte(&s[0..2]), parse_hex_byte(&s[2..4]))
 }
 
 pub fn hex_to_byte_array(hex_string: &str) -> Vec<u8> {

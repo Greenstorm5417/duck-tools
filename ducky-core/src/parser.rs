@@ -80,15 +80,15 @@ impl ParserState {
     }
 
     pub fn is_reserved_var(var: &str) -> bool {
-        RESERVED_VARIABLES.contains_key(var)
+        reserved_variable_value(var).is_some()
     }
 
     pub fn is_reserved_constant(constant: &str) -> bool {
-        RESERVED_CONSTANTS.contains_key(constant)
+        reserved_constant_value(constant).is_some()
     }
 
     pub fn is_operator(op: &str) -> bool {
-        OPERATOR_MAP.contains_key(op)
+        operator_value(op).is_some()
     }
 
     pub fn is_var(word: &str) -> bool {
@@ -137,60 +137,70 @@ impl ParserState {
     }
 }
 
+fn is_double_operator(a: char, b: char) -> bool {
+    matches!(
+        (a, b),
+        ('&', '&')
+            | ('|', '|')
+            | ('<', '<')
+            | ('>', '>')
+            | ('=', '=')
+            | ('!', '=')
+            | ('(', ')')
+            | ('<', '=')
+            | ('>', '=')
+    )
+}
+
+fn is_split_operator_char(c: char) -> bool {
+    matches!(
+        c,
+        '(' | ')' | '+' | '-' | '*' | '/' | '<' | '>' | '&' | '|' | '%' | '^'
+    )
+}
+
 pub fn split_syntax_line(line: &str) -> Vec<String> {
     let mut result = Vec::new();
-    let chars: Vec<char> = line.chars().collect();
     let mut current = String::new();
-    let mut i = 0;
+    let mut chars = line.chars().peekable();
 
-    while i < chars.len() {
-        let c = chars[i];
-        let next = if i + 1 < chars.len() {
-            Some(chars[i + 1])
-        } else {
-            None
-        };
+    while let Some(c) = chars.next() {
+        let next = chars.peek().copied();
 
         if c == '(' && next == Some(')') && !current.is_empty() {
-            result.push(format!("{}()", current));
-            current.clear();
-            i += 2;
+            current.push_str("()");
+            result.push(std::mem::take(&mut current));
+            chars.next();
             continue;
         }
 
         if c == ' ' {
             if !current.is_empty() {
-                result.push(current.clone());
-                current.clear();
+                result.push(std::mem::take(&mut current));
             }
-            i += 1;
             continue;
         }
 
-        let double_op = if let Some(n) = next {
-            let two_char = format!("{}{}", c, n);
-            DOUBLE_OPERATORS.contains(&two_char.as_str())
-        } else {
-            false
-        };
+        let double_op = matches!(next, Some(n) if is_double_operator(c, n));
 
         if double_op {
             if !current.is_empty() {
-                result.push(current.clone());
-                current.clear();
+                result.push(std::mem::take(&mut current));
             }
-            result.push(format!("{}{}", c, next.unwrap()));
-            i += 2;
-        } else if "()".contains(c) || OPERATOR_MAP.contains_key(&c.to_string().as_str()) {
+            let n = chars.next().unwrap_or_default();
+            let mut tok = String::with_capacity(2);
+            tok.push(c);
+            tok.push(n);
+            result.push(tok);
+        } else if is_split_operator_char(c) {
             if !current.is_empty() {
-                result.push(current.clone());
-                current.clear();
+                result.push(std::mem::take(&mut current));
             }
-            result.push(c.to_string());
-            i += 1;
+            let mut tok = String::with_capacity(1);
+            tok.push(c);
+            result.push(tok);
         } else {
             current.push(c);
-            i += 1;
         }
     }
 

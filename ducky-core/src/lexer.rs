@@ -1,106 +1,3 @@
-use lazy_static::lazy_static;
-use regex::Regex;
-
-lazy_static! {
-    pub static ref DEFINE_REGEX: Regex = Regex::new(r"^\s*DEFINE .*").unwrap();
-    pub static ref IFDEF_REGEX: Regex = Regex::new(r"^\s*IF_DEFINED_TRUE .*").unwrap();
-    pub static ref IFNOTDEF_REGEX: Regex = Regex::new(r"^\s*IF_NOT_DEFINED_TRUE .*").unwrap();
-    pub static ref ENDIFDEF_REGEX: Regex = Regex::new(r"^\s*END_IF_DEFINED\s*$").unwrap();
-    pub static ref ELSEDEF_REGEX: Regex = Regex::new(r"^\s*ELSE_DEFINED\s*$").unwrap();
-    pub static ref STRINGLN_REGEX: Regex = Regex::new(r"^\s*STRINGLN\s+.*$").unwrap();
-    pub static ref STRING_REGEX: Regex = Regex::new(r"^\s*STRING\s+.*$").unwrap();
-    pub static ref STRING_INLINE_REGEX: Regex =
-        Regex::new(r"^\s*STRING\s+.*\s+END_STRING$").unwrap();
-    pub static ref STRINGLN_INLINE_REGEX: Regex =
-        Regex::new(r"^\s*STRINGLN\s+.*\s+END_STRING$").unwrap();
-    pub static ref END_STRING_REGEX: Regex = Regex::new(r"^\s*END_STRING(LN)?\s*$").unwrap();
-    pub static ref INLINE_STRINGLN_REGEX: Regex = Regex::new(
-        r"^\s*STRINGLN(_(POWERSHELL|BASH|BATCH|PYTHON|HTML|RUBY|JAVASCRIPT))?\s+.*\s+END_STRINGLN$"
-    )
-    .unwrap();
-    pub static ref INLINE_STRING_REGEX: Regex = Regex::new(
-        r"^\s*STRING(_(POWERSHELL|BASH|BATCH|PYTHON|HTML|RUBY|JAVASCRIPT))?\s+.*\s+END_STRING$"
-    )
-    .unwrap();
-    pub static ref STRINGLN_BLOCK_REGEX: Regex =
-        Regex::new(r"^\s*STRINGLN(_(POWERSHELL|BASH|BATCH|PYTHON|HTML|RUBY|JAVASCRIPT))?$")
-            .unwrap();
-    pub static ref STRING_BLOCK_REGEX: Regex =
-        Regex::new(r"^\s*STRING(_(POWERSHELL|BASH|BATCH|PYTHON|HTML|RUBY|JAVASCRIPT))?$").unwrap();
-    pub static ref REM_REGEX: Regex = Regex::new(r"^\s*REM.*$").unwrap();
-    pub static ref REM_BLOCK_REGEX: Regex = Regex::new(r"^\s*REM_BLOCK.*$").unwrap();
-    pub static ref END_REM_BLOCK_REGEX: Regex = Regex::new(r"^\s*END_REM.*$").unwrap();
-    pub static ref COMMENT_REGEX: Regex = Regex::new(r"^// .*$").unwrap();
-    pub static ref PREPROCESSOR_DISABLED: Regex =
-        Regex::new(r"^\s*PREPROCESSOR_DISABLED.*$").unwrap();
-    pub static ref INJECT_VAR_REGEX: Regex = Regex::new(r"^\s*INJECT_VAR \$.*$").unwrap();
-    pub static ref DELAY_VAR_REGEX: Regex = Regex::new(r"^\s*DELAY \$.*$").unwrap();
-    pub static ref DELAY_REGEX: Regex = Regex::new(r"^\s*DELAY .*").unwrap();
-    pub static ref HOLD_REGEX: Regex = Regex::new(r"^\s*HOLD .*$").unwrap();
-    pub static ref RELEASE_REGEX: Regex = Regex::new(r"^\s*RELEASE .*$").unwrap();
-    pub static ref REPEAT_REGEX: Regex = Regex::new(r"^\s*REPEAT (?:[2-9]|\d\d\d*).*$").unwrap();
-    pub static ref ENTER_REGEX: Regex = Regex::new(r"^\s*ENTER.*$").unwrap();
-    pub static ref DEFAULTDELAY_REGEX: Regex =
-        Regex::new(r"^\s*DEFAULTDELAY (?:[2-9]|\d\d\d*)$").unwrap();
-    pub static ref DEFAULT_DELAY_REGEX: Regex =
-        Regex::new(r"^\s*DEFAULT_DELAY (?:[2-9]|\d\d\d*)$").unwrap();
-    pub static ref STRINGDELAY_REGEX: Regex =
-        Regex::new(r"^\s*STRINGDELAY (?:[2-9]|\d\d\d*).*$").unwrap();
-    pub static ref STRING_DELAY_REGEX: Regex =
-        Regex::new(r"^\s*STRING_DELAY (?:[2-9]|\d\d\d*).*$").unwrap();
-    pub static ref IF_REGEX: Regex = Regex::new(r"^\s*IF .*").unwrap();
-    pub static ref END_B_REGEX: Regex = Regex::new(r"^}.*").unwrap();
-    pub static ref END_IF_REGEX: Regex = Regex::new(r"^\s*END_IF.*").unwrap();
-    pub static ref ELSE_IF_REGEX: Regex = Regex::new(r"^\s*ELSE IF .*").unwrap();
-    pub static ref ELSE_REGEX: Regex = Regex::new(r"^\s*ELSE.*").unwrap();
-    pub static ref WHILE_REGEX: Regex = Regex::new(r"^\s*WHILE .*").unwrap();
-    pub static ref END_WHILE_REGEX: Regex = Regex::new(r"^\s*END_WHILE.*").unwrap();
-    pub static ref STAGE_DEF_REGEX: Regex = Regex::new(r"^\s*STAGE .*$").unwrap();
-    pub static ref END_STAGE_REGEX: Regex = Regex::new(r"^\s*END_STAGE.*").unwrap();
-    pub static ref EXTENSION_DEF_REGEX: Regex = Regex::new(r"^\s*EXTENSION .*$").unwrap();
-    pub static ref END_EXTENSION_REGEX: Regex = Regex::new(r"^\s*END_EXTENSION.*").unwrap();
-    pub static ref FUNCTION_DEF_REGEX: Regex = Regex::new(r"^\s*FUNCTION .*\(\).*").unwrap();
-    pub static ref END_FUNCTION_REGEX: Regex = Regex::new(r"^\s*END_FUNCTION.*").unwrap();
-    pub static ref ATTACKMODE_REGEX: Regex = Regex::new(r"^\s*ATTACKMODE .*").unwrap();
-    pub static ref FUNCTION_CALL_RETURN_REGEX: Regex = Regex::new(r"^\s*RETURN .*").unwrap();
-    pub static ref ASSIGNMENT_REGEX: Regex = Regex::new(r"\$.*= .*").unwrap();
-    pub static ref DECLARATION_REGEX: Regex = Regex::new(r"^\s*VAR \$.*= .*").unwrap();
-    pub static ref FUNCTION_CALL_NO_RETURN_REGEX: Regex = Regex::new(r"^\s*[\w]+\(\)").unwrap();
-    pub static ref BUTTON_DEF_REGEX: Regex = Regex::new(r"^\s*BUTTON_DEF.*").unwrap();
-    pub static ref END_BUTTON_DEF_REGEX: Regex = Regex::new(r"^\s*END_BUTTON.*").unwrap();
-    pub static ref DEBUGGER_BREAKPOINT_REGEX: Regex =
-        Regex::new(r"^\s*DEBUGGER_BREAKPOINT.*").unwrap();
-    pub static ref INJECT_BREAKPOINT_LINENUMBER_REGEX: Regex =
-        Regex::new(r"^\s*INJECT_BREAKPOINT_LINE_NUMBER.*").unwrap();
-    pub static ref RANDOM_LOWERCASE_LETTER_REGEX: Regex =
-        Regex::new(r"^\s*RANDOM_LOWERCASE_LETTER.*").unwrap();
-    pub static ref RANDOM_UPPERCASE_LETTER_REGEX: Regex =
-        Regex::new(r"^\s*RANDOM_UPPERCASE_LETTER.*").unwrap();
-    pub static ref RANDOM_NUMBER_REGEX: Regex = Regex::new(r"^\s*RANDOM_NUMBER.*").unwrap();
-    pub static ref RANDOM_LETTER_REGEX: Regex = Regex::new(r"^\s*RANDOM_LETTER.*").unwrap();
-    pub static ref RANDOM_SPECIAL_REGEX: Regex = Regex::new(r"^\s*RANDOM_SPECIAL.*").unwrap();
-    pub static ref RANDOM_CHAR_REGEX: Regex = Regex::new(r"^\s*RANDOM_CHAR.*").unwrap();
-    pub static ref RESTORE_HOST_KEYBOARD_LOCK_STATE_REGEX: Regex =
-        Regex::new(r"^\s*RESTORE_HOST_KEYBOARD_LOCK_STATE.*").unwrap();
-    pub static ref INJECTMOD_REGEX: Regex = Regex::new(r"^\s*INJECT_MOD\s*$").unwrap();
-    pub static ref INJECTMOD_PARAM_REGEX: Regex = Regex::new(r"^\s*INJECT_MOD .*$").unwrap();
-    pub static ref INJECT_REGEX: Regex = Regex::new(r"^\s*INJECT .*").unwrap();
-    pub static ref KEYCODE_REGEX: Regex = Regex::new(r"^\s*KEYCODE .*$").unwrap();
-    pub static ref EXFIL_VAR_REGEX: Regex = Regex::new(r"^\s*EXFIL \$.*").unwrap();
-    pub static ref MOD_KEY_DOWN_REGEX: Regex = Regex::new(r"^\s*MOD_KEY_DOWN .*").unwrap();
-    pub static ref MOD_KEY_UP_REGEX: Regex = Regex::new(r"^\s*MOD_KEY_UP .*").unwrap();
-    pub static ref MOD_UP_REGEX: Regex = Regex::new(r"^\s*MOD_UP .*").unwrap();
-    pub static ref KEY_UP_REGEX: Regex = Regex::new(r"^\s*KEY_UP .*").unwrap();
-    pub static ref KEY_DOWN_REGEX: Regex = Regex::new(r"^\s*KEY_DOWN .*").unwrap();
-    pub static ref MOD_DOWN_REGEX: Regex = Regex::new(r"^\s*MOD_DOWN .*").unwrap();
-    pub static ref US_MODIFIERS_REGEX: Regex =
-        Regex::new(r"^\s*(CTRL|CONTROL|SHIFT|ALT|GUI|WINDOWS|CTRL-ALT|COMMAND)$").unwrap();
-    pub static ref VAR_REGEX: Regex = Regex::new(r"\$.*").unwrap();
-    pub static ref FUNCTION_CALL_REGEX: Regex = Regex::new(r"[\w]+\(\)").unwrap();
-    pub static ref HEX_REGEX: Regex = Regex::new(r"0x.*").unwrap();
-    pub static ref DECIMAL_REGEX: Regex = Regex::new(r"(?:[0-9]|\d\d\d*)").unwrap();
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     Define,
@@ -186,242 +83,389 @@ pub enum TokenType {
     Unknown,
 }
 
-pub fn tokenize_line(line: &str) -> TokenType {
-    let trimmed = line.trim();
+const LANGS: [&str; 7] = [
+    "_POWERSHELL",
+    "_BASH",
+    "_BATCH",
+    "_PYTHON",
+    "_HTML",
+    "_RUBY",
+    "_JAVASCRIPT",
+];
 
-    if PREPROCESSOR_DISABLED.is_match(trimmed) {
+const US_MODIFIERS: [&str; 8] = [
+    "CTRL", "CONTROL", "SHIFT", "ALT", "GUI", "WINDOWS", "CTRL-ALT", "COMMAND",
+];
+
+fn first_char_whitespace(s: &str) -> bool {
+    s.chars().next().is_some_and(|c| c.is_whitespace())
+}
+
+fn repeat_number_prefix(s: &str) -> bool {
+    let b = s.as_bytes();
+    if b.is_empty() || !b[0].is_ascii_digit() {
+        return false;
+    }
+    b[0] >= b'2' || (b.len() >= 2 && b[1].is_ascii_digit())
+}
+
+fn exact_number_2plus(s: &str) -> bool {
+    let b = s.as_bytes();
+    if b.is_empty() || !b.iter().all(|c| c.is_ascii_digit()) {
+        return false;
+    }
+    b.len() >= 2 || b[0] >= b'2'
+}
+
+fn inline_body(t: &str, head_len: usize, tail: &str) -> bool {
+    if !t.ends_with(tail) || t.len() < head_len + tail.len() {
+        return false;
+    }
+    let mid = &t[head_len..t.len() - tail.len()];
+    let mut count = 0;
+    let mut first = None;
+    let mut last = None;
+    for c in mid.chars() {
+        if first.is_none() {
+            first = Some(c);
+        }
+        last = Some(c);
+        count += 1;
+    }
+    count >= 2
+        && first.is_some_and(|c| c.is_whitespace())
+        && last.is_some_and(|c| c.is_whitespace())
+}
+
+fn matches_inline(t: &str, base: &str, tail: &str, allow_lang: bool) -> bool {
+    if !t.starts_with(base) {
+        return false;
+    }
+    if inline_body(t, base.len(), tail) {
+        return true;
+    }
+    if allow_lang {
+        let rest = &t[base.len()..];
+        for lang in LANGS {
+            if rest.starts_with(lang) && inline_body(t, base.len() + lang.len(), tail) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn matches_block(t: &str, base: &str) -> bool {
+    if t == base {
+        return true;
+    }
+    if let Some(rest) = t.strip_prefix(base) {
+        return LANGS.contains(&rest);
+    }
+    false
+}
+
+fn leading_word_chars(t: &str) -> usize {
+    t.as_bytes()
+        .iter()
+        .take_while(|b| b.is_ascii_alphanumeric() || **b == b'_')
+        .count()
+}
+
+pub fn is_preprocessor_disabled(t: &str) -> bool {
+    t.starts_with("PREPROCESSOR_DISABLED")
+}
+
+pub fn is_rem(t: &str) -> bool {
+    t.starts_with("REM")
+}
+
+pub fn is_end_rem_block(t: &str) -> bool {
+    t.starts_with("END_REM")
+}
+
+pub fn is_define(t: &str) -> bool {
+    t.starts_with("DEFINE ")
+}
+
+pub fn is_ifdef(t: &str) -> bool {
+    t.starts_with("IF_DEFINED_TRUE ")
+}
+
+pub fn is_ifnotdef(t: &str) -> bool {
+    t.starts_with("IF_NOT_DEFINED_TRUE ")
+}
+
+pub fn is_elsedef(t: &str) -> bool {
+    t == "ELSE_DEFINED"
+}
+
+pub fn is_endifdef(t: &str) -> bool {
+    t == "END_IF_DEFINED"
+}
+
+pub fn is_end_string(t: &str) -> bool {
+    t == "END_STRING" || t == "END_STRINGLN"
+}
+
+pub fn is_string_block(t: &str) -> bool {
+    matches_block(t, "STRING")
+}
+
+pub fn is_stringln_block(t: &str) -> bool {
+    matches_block(t, "STRINGLN")
+}
+
+pub fn tokenize_line(line: &str) -> TokenType {
+    tokenize_trimmed(line.trim())
+}
+
+pub fn tokenize_trimmed(t: &str) -> TokenType {
+    if is_preprocessor_disabled(t) {
         return TokenType::PreprocessorDisabled;
     }
-    if REM_BLOCK_REGEX.is_match(trimmed) {
+    if t.starts_with("REM_BLOCK") {
         return TokenType::RemBlock;
     }
-    if END_REM_BLOCK_REGEX.is_match(trimmed) {
+    if is_end_rem_block(t) {
         return TokenType::EndRemBlock;
     }
-    if REM_REGEX.is_match(trimmed) {
+    if is_rem(t) {
         return TokenType::Rem;
     }
-    if COMMENT_REGEX.is_match(trimmed) {
+    if t.starts_with("// ") {
         return TokenType::Comment;
     }
 
-    if DEFINE_REGEX.is_match(trimmed) {
+    if is_define(t) {
         return TokenType::Define;
     }
-    if IFDEF_REGEX.is_match(trimmed) {
+    if is_ifdef(t) {
         return TokenType::IfDefined;
     }
-    if IFNOTDEF_REGEX.is_match(trimmed) {
+    if is_ifnotdef(t) {
         return TokenType::IfNotDefined;
     }
-    if ELSEDEF_REGEX.is_match(trimmed) {
+    if is_elsedef(t) {
         return TokenType::ElseDefined;
     }
-    if ENDIFDEF_REGEX.is_match(trimmed) {
+    if is_endifdef(t) {
         return TokenType::EndIfDefined;
     }
 
-    if INJECT_VAR_REGEX.is_match(trimmed) {
+    if t.starts_with("INJECT_VAR $") {
         return TokenType::InjectVar;
     }
-    if DELAY_VAR_REGEX.is_match(trimmed) {
+    if t.starts_with("DELAY $") {
         return TokenType::DelayVar;
     }
-    if DELAY_REGEX.is_match(trimmed) {
+    if t.starts_with("DELAY ") {
         return TokenType::Delay;
     }
 
-    if END_STRING_REGEX.is_match(trimmed) {
+    if is_end_string(t) {
         return TokenType::EndString;
     }
-    if STRINGLN_INLINE_REGEX.is_match(trimmed) {
+    if matches_inline(t, "STRINGLN", "END_STRING", false) {
         return TokenType::StringLn;
     }
-    if STRING_INLINE_REGEX.is_match(trimmed) {
+    if matches_inline(t, "STRING", "END_STRING", false) {
         return TokenType::String;
     }
-    if INLINE_STRINGLN_REGEX.is_match(trimmed) {
+    if matches_inline(t, "STRINGLN", "END_STRINGLN", true) {
         return TokenType::StringLn;
     }
-    if INLINE_STRING_REGEX.is_match(trimmed) {
+    if matches_inline(t, "STRING", "END_STRING", true) {
         return TokenType::String;
     }
-    if STRINGLN_BLOCK_REGEX.is_match(trimmed) {
+    if is_stringln_block(t) {
         return TokenType::StringLnBlock;
     }
-    if STRING_BLOCK_REGEX.is_match(trimmed) {
+    if is_string_block(t) {
         return TokenType::StringBlock;
     }
-    if STRINGLN_REGEX.is_match(trimmed) {
+    if t.starts_with("STRINGLN") && first_char_whitespace(&t["STRINGLN".len()..]) {
         return TokenType::StringLn;
     }
-    if STRING_REGEX.is_match(trimmed) {
+    if t.starts_with("STRING") && first_char_whitespace(&t["STRING".len()..]) {
         return TokenType::String;
     }
 
-    if HOLD_REGEX.is_match(trimmed) {
+    if t.starts_with("HOLD ") {
         return TokenType::Hold;
     }
-    if RELEASE_REGEX.is_match(trimmed) {
+    if t.starts_with("RELEASE ") {
         return TokenType::Release;
     }
-    if REPEAT_REGEX.is_match(trimmed) {
+    if t.starts_with("REPEAT ") && repeat_number_prefix(&t["REPEAT ".len()..]) {
         return TokenType::Repeat;
     }
-    if ENTER_REGEX.is_match(trimmed) {
+    if t.starts_with("ENTER") {
         return TokenType::Enter;
     }
 
-    if DEFAULTDELAY_REGEX.is_match(trimmed) {
+    if t.starts_with("DEFAULTDELAY ") && exact_number_2plus(&t["DEFAULTDELAY ".len()..]) {
         return TokenType::DefaultDelay;
     }
-    if DEFAULT_DELAY_REGEX.is_match(trimmed) {
+    if t.starts_with("DEFAULT_DELAY ") && exact_number_2plus(&t["DEFAULT_DELAY ".len()..]) {
         return TokenType::DefaultDelay;
     }
-    if STRINGDELAY_REGEX.is_match(trimmed) {
+    if t.starts_with("STRINGDELAY ") && repeat_number_prefix(&t["STRINGDELAY ".len()..]) {
         return TokenType::StringDelay;
     }
-    if STRING_DELAY_REGEX.is_match(trimmed) {
+    if t.starts_with("STRING_DELAY ") && repeat_number_prefix(&t["STRING_DELAY ".len()..]) {
         return TokenType::StringDelay;
     }
 
-    if IF_REGEX.is_match(trimmed) {
+    if t.starts_with("IF ") {
         return TokenType::If;
     }
-    if END_B_REGEX.is_match(trimmed) {
+    if t.starts_with('}') {
         return TokenType::EndIf;
     }
-    if END_IF_REGEX.is_match(trimmed) {
+    if t.starts_with("END_IF") {
         return TokenType::EndIf;
     }
-    if ELSE_IF_REGEX.is_match(trimmed) {
+    if t.starts_with("ELSE IF ") {
         return TokenType::ElseIf;
     }
-    if ELSE_REGEX.is_match(trimmed) {
+    if t.starts_with("ELSE") {
         return TokenType::Else;
     }
 
-    if WHILE_REGEX.is_match(trimmed) {
+    if t.starts_with("WHILE ") {
         return TokenType::While;
     }
-    if END_WHILE_REGEX.is_match(trimmed) {
+    if t.starts_with("END_WHILE") {
         return TokenType::EndWhile;
     }
 
-    if STAGE_DEF_REGEX.is_match(trimmed) {
+    if t.starts_with("STAGE ") {
         return TokenType::Stage;
     }
-    if END_STAGE_REGEX.is_match(trimmed) {
+    if t.starts_with("END_STAGE") {
         return TokenType::EndStage;
     }
 
-    if EXTENSION_DEF_REGEX.is_match(trimmed) {
+    if t.starts_with("EXTENSION ") {
         return TokenType::Extension;
     }
-    if END_EXTENSION_REGEX.is_match(trimmed) {
+    if t.starts_with("END_EXTENSION") {
         return TokenType::EndExtension;
     }
 
-    if FUNCTION_DEF_REGEX.is_match(trimmed) {
+    if t.starts_with("FUNCTION ") && t["FUNCTION ".len()..].contains("()") {
         return TokenType::Function;
     }
-    if END_FUNCTION_REGEX.is_match(trimmed) {
+    if t.starts_with("END_FUNCTION") {
         return TokenType::EndFunction;
     }
 
-    if ATTACKMODE_REGEX.is_match(trimmed) {
+    if t.starts_with("ATTACKMODE ") {
         return TokenType::Attackmode;
     }
-    if FUNCTION_CALL_RETURN_REGEX.is_match(trimmed) {
+    if t.starts_with("RETURN ") {
         return TokenType::Return;
     }
 
-    if ASSIGNMENT_REGEX.is_match(trimmed) {
+    if is_assignment(t) {
         return TokenType::Assignment;
     }
-    if DECLARATION_REGEX.is_match(trimmed) {
+    if t.starts_with("VAR $") && t["VAR $".len()..].contains("= ") {
         return TokenType::Declaration;
     }
-    if FUNCTION_CALL_NO_RETURN_REGEX.is_match(trimmed) {
+    if is_function_call_no_return(t) {
         return TokenType::FunctionCall;
     }
 
-    if BUTTON_DEF_REGEX.is_match(trimmed) {
+    if t.starts_with("BUTTON_DEF") {
         return TokenType::ButtonDef;
     }
-    if END_BUTTON_DEF_REGEX.is_match(trimmed) {
+    if t.starts_with("END_BUTTON") {
         return TokenType::EndButtonDef;
     }
 
-    if DEBUGGER_BREAKPOINT_REGEX.is_match(trimmed) {
+    if t.starts_with("DEBUGGER_BREAKPOINT") {
         return TokenType::Breakpoint;
     }
-    if INJECT_BREAKPOINT_LINENUMBER_REGEX.is_match(trimmed) {
+    if t.starts_with("INJECT_BREAKPOINT_LINE_NUMBER") {
         return TokenType::InjectBreakpointLineNumber;
     }
 
-    if RANDOM_LOWERCASE_LETTER_REGEX.is_match(trimmed) {
+    if t.starts_with("RANDOM_LOWERCASE_LETTER") {
         return TokenType::RandomLowercaseLetter;
     }
-    if RANDOM_UPPERCASE_LETTER_REGEX.is_match(trimmed) {
+    if t.starts_with("RANDOM_UPPERCASE_LETTER") {
         return TokenType::RandomUppercaseLetter;
     }
-    if RANDOM_NUMBER_REGEX.is_match(trimmed) {
+    if t.starts_with("RANDOM_NUMBER") {
         return TokenType::RandomNumber;
     }
-    if RANDOM_LETTER_REGEX.is_match(trimmed) {
+    if t.starts_with("RANDOM_LETTER") {
         return TokenType::RandomLetter;
     }
-    if RANDOM_SPECIAL_REGEX.is_match(trimmed) {
+    if t.starts_with("RANDOM_SPECIAL") {
         return TokenType::RandomSpecial;
     }
-    if RANDOM_CHAR_REGEX.is_match(trimmed) {
+    if t.starts_with("RANDOM_CHAR") {
         return TokenType::RandomChar;
     }
 
-    if RESTORE_HOST_KEYBOARD_LOCK_STATE_REGEX.is_match(trimmed) {
+    if t.starts_with("RESTORE_HOST_KEYBOARD_LOCK_STATE") {
         return TokenType::Unknown;
     }
 
-    if INJECTMOD_REGEX.is_match(trimmed) {
+    if t == "INJECT_MOD" {
         return TokenType::InjectMod;
     }
-    if INJECTMOD_PARAM_REGEX.is_match(trimmed) {
+    if t.starts_with("INJECT_MOD ") {
         return TokenType::InjectMod;
     }
-    if INJECT_REGEX.is_match(trimmed) {
+    if t.starts_with("INJECT ") {
         return TokenType::Inject;
     }
-    if KEYCODE_REGEX.is_match(trimmed) {
+    if t.starts_with("KEYCODE ") {
         return TokenType::Keycode;
     }
 
-    if EXFIL_VAR_REGEX.is_match(trimmed) {
+    if t.starts_with("EXFIL $") {
         return TokenType::ExfilVar;
     }
 
-    if MOD_KEY_DOWN_REGEX.is_match(trimmed) {
+    if t.starts_with("MOD_KEY_DOWN ") {
         return TokenType::ModKeyDown;
     }
-    if MOD_KEY_UP_REGEX.is_match(trimmed) {
+    if t.starts_with("MOD_KEY_UP ") {
         return TokenType::ModKeyUp;
     }
-    if MOD_UP_REGEX.is_match(trimmed) {
+    if t.starts_with("MOD_UP ") {
         return TokenType::ModUp;
     }
-    if KEY_UP_REGEX.is_match(trimmed) {
+    if t.starts_with("KEY_UP ") {
         return TokenType::KeyUp;
     }
-    if KEY_DOWN_REGEX.is_match(trimmed) {
+    if t.starts_with("KEY_DOWN ") {
         return TokenType::KeyDown;
     }
-    if MOD_DOWN_REGEX.is_match(trimmed) {
+    if t.starts_with("MOD_DOWN ") {
         return TokenType::ModDown;
     }
 
-    if US_MODIFIERS_REGEX.is_match(trimmed) {
+    if US_MODIFIERS.contains(&t) {
         return TokenType::Modifier;
     }
 
     TokenType::Unknown
+}
+
+fn is_assignment(t: &str) -> bool {
+    match t.find('$') {
+        Some(p) => t[p + 1..].contains("= "),
+        None => false,
+    }
+}
+
+fn is_function_call_no_return(t: &str) -> bool {
+    let n = leading_word_chars(t);
+    n >= 1 && t[n..].starts_with("()")
 }

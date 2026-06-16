@@ -11,8 +11,6 @@ name = "ducky_core"
 path = "src/lib.rs"
 
 [dependencies]
-regex.workspace = true
-lazy_static.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 thiserror.workspace = true
@@ -20,3 +18,11 @@ thiserror.workspace = true
 [dev-dependencies]
 sha2.workspace = true
 hex.workspace = true
+criterion = { version = "0.8.2", features = ["html_reports"] }
+
+[[bench]]
+name = "compile"
+harness = false
+
+[lints]
+workspace = true
